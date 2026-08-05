@@ -16,67 +16,8 @@
       {
         "title": "FIP Nationale",
         "uri": "webrfip/0",
-        "url": "http://icecast.radiofrance.fr/fip-hifi.aac"
-      },
-      {
-        "title": "FIP Rock",
-        "uri": "webrfip/1",
-        "url": "http://icecast.radiofrance.fr/fiprock-hifi.aac"
-      },
-      {
-        "title": "FIP Jazz",
-        "uri": "webrfip/2",
-        "url": "http://icecast.radiofrance.fr/fipjazz-hifi.aac"
-      },
-      {
-        "title": "FIP Groove",
-        "uri": "webrfip/3",
-        "url": "http://icecast.radiofrance.fr/fipgroove-hifi.aac"
-      },
-      {
-        "title": "FIP Monde",
-        "uri": "webrfip/4",
-        "url": "http://icecast.radiofrance.fr/fipworld-hifi.aac"
-      },
-      {
-        "title": "FIP Electro",
-        "uri": "webrfip/5",
-        "url": "http://icecast.radiofrance.fr/fipelectro-hifi.aac"
-      },
-      {
-        "title": "FIP Pop",
-        "uri": "webrfip/6",
-        "url": "http://icecast.radiofrance.fr/fippop-hifi.aac"
-      },
-      {
-        "title": "FIP Reggae",
-        "uri": "webrfip/7",
-        "url": "http://icecast.radiofrance.fr/fipreggae-hifi.aac"
-      },
-      {
-        "title": "FIP Metal",
-        "uri": "webrfip/8",
-        "url": "http://icecast.radiofrance.fr/fipmetal-hifi.aac"
-      },
-      {
-        "title": "FIP Hip-Hop",
-        "uri": "webrfip/9",
-        "url": "http://icecast.radiofrance.fr/fiphiphop-hifi.aac"
-      },
-      {
-        "title": "FIP Nouveautés",
-        "uri": "webrfip/10",
-        "url": "http://icecast.radiofrance.fr/fipnouveautes-hifi.aac"
-      },
-      {
-        "title": "FIP Cultes",
-        "uri": "webrfip/11",
-        "url": "http://icecast.radiofrance.fr/fipcultes-hifi.aac"
-      },
-      {
-        "title": "FIP Sacré Français",
-        "uri": "webrfip/12",
-        "url": "http://icecast.radiofrance.fr/fipsacrefrancais-hifi.aac"
+        "url": "http://icecast.radiofrance.fr/fip-hifi.aac",
+        "metadataId": "100"
       }
     ]
   }
