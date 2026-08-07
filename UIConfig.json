@@ -1,6 +1,6 @@
 {
     "page": {
-      "label": "Radio Paradise Configuration"
+      "label": "80s80s Configuration"
     },
     "sections": [
       {
@@ -11,7 +11,7 @@
         "description": "The API delay for metadata (artist, title) in seconds.",
         "onSave": {
           "type": "controller",
-          "endpoint":"music_service/radio_paradise",
+          "endpoint":"music_service/80s80s",
           "method":"updateConfig"
         },
         "saveButton": {
@@ -26,9 +26,9 @@
             "type":"text",
             "element": "input",
             "label": "API Delay (in seconds)",
-            "value": 5
+            "value": "30"
           }
         ]
       }
     ]
-}
+  }
