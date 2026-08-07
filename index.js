@@ -1,9 +1,18 @@
 'use strict';
 
-
 const MusicService = require('music_service');
-const Stations = require('./lib/stations');
-const Metadata = require('./lib/metadata');
+const fs = require('fs');
+const path = require('path');
+
+const Metadata = require('./metadata');
+
+
+const PLUGIN_NAME = 'radio_fip';
+
+const IMAGE_PATH =
+    '/data/plugins/music_service/' +
+    PLUGIN_NAME +
+    '/images/';
 
 
 module.exports = MusicService.extend({
@@ -20,17 +29,64 @@ module.exports = MusicService.extend({
             context.logger;
 
 
-        this.metadata =
-            new Metadata(this.logger);
-
+        this.stations = [];
 
         this.currentStation = null;
+
         this.metadataTimer = null;
 
 
+        this.metadata =
+            new Metadata(
+                this.logger
+            );
+
+
+        this.loadStations();
+
+
         this.logger.info(
-            "[radio_fip] Plugin created"
+            '[radio_fip] Plugin created'
         );
+
+    },
+
+
+    loadStations: function() {
+
+        try {
+
+            const file =
+                path.join(
+                    __dirname,
+                    'radio_stations.json'
+                );
+
+
+            this.stations =
+                JSON.parse(
+                    fs.readFileSync(
+                        file,
+                        'utf8'
+                    )
+                );
+
+
+            this.logger.info(
+                '[radio_fip] Loaded ' +
+                this.stations.length +
+                ' stations'
+            );
+
+
+        } catch (error) {
+
+            this.logger.error(
+                '[radio_fip] Unable to load stations: ' +
+                error.message
+            );
+
+        }
 
     },
 
@@ -38,8 +94,15 @@ module.exports = MusicService.extend({
     onVolumioStart: function() {
 
         this.logger.info(
-            "[radio_fip] Plugin started"
+            '[radio_fip] Started'
         );
+
+    },
+
+
+    onStop: function() {
+
+        this.stopMetadata();
 
     },
 
@@ -58,52 +121,70 @@ module.exports = MusicService.extend({
     },
 
 
+    getServiceName: function() {
+
+        return 'Radio FIP';
+
+    },
+
+
     browse: function(uri) {
-
-
-        let self = this;
 
 
         let items = [];
 
 
-        Stations.forEach((station)=>{
+        this.stations.forEach(
+            (station) => {
 
 
-            items.push({
+                items.push({
 
-                service: "radio_fip",
+                    service: PLUGIN_NAME,
 
-                type: "station",
+                    type: 'station',
 
-                title: station.title,
+                    title:
+                        station.title,
 
-                uri:
-                    "radio_fip/" + station.id,
+                    uri:
+                        PLUGIN_NAME +
+                        '/' +
+                        station.id,
 
-                albumart:
-                    "/albumart?sourceicon=/data/INTERNAL/albumart/" +
-                    station.logo
+                    albumart:
+                        IMAGE_PATH +
+                        station.logo
 
-            });
-
-
-        });
+                });
 
 
-        self.commandRouter.executeOnPlugin(
+            }
+        );
+
+
+        this.commandRouter.executeOnPlugin(
             'music_service',
-            'radio_fip',
+            PLUGIN_NAME,
             'handleBrowseResult',
             {
+
                 navigation: {
+
                     lists: [
+
                         {
-                            title: "FIP",
+
+                            title: 'Radio FIP',
+
                             items: items
+
                         }
+
                     ]
+
                 }
+
             }
         );
 
@@ -111,121 +192,50 @@ module.exports = MusicService.extend({
     },
 
 
-
     explodeUri: function(uri) {
 
         return [
+
             {
-                service: "radio_fip",
-                type: "station",
+
+                service: PLUGIN_NAME,
+
+                type: 'station',
+
                 uri: uri
+
             }
+
         ];
 
     },
 
 
-
-    clearTimer: function() {
-
-        if(this.metadataTimer){
-
-            clearInterval(
-                this.metadataTimer
-            );
-
-            this.metadataTimer = null;
-
-        }
-
-    },
-
-
-
-    startMetadata: function(station) {
-
-
-        let self = this;
-
-
-        this.clearTimer();
-
-
-        if(!station.metadataId){
-
-            this.logger.info(
-                "[radio_fip] No metadata available"
-            );
-
-            return;
-
-        }
-
-
-        this.metadataTimer =
-            setInterval(()=>{
-
-
-                self.metadata.get(
-                    station.metadataId,
-                    (info)=>{
-
-
-                        if(!info) {
-                            return;
-                        }
-
-
-                        self.commandRouter.pushState({
-
-                            status: "play",
-
-                            service:
-                                "radio_fip",
-
-                            title:
-                                info.title,
-
-                            artist:
-                                info.artist,
-
-                            album:
-                                info.album,
-
-                            albumart:
-                                info.albumArt ||
-                                station.logo
-
-                        });
-
-
-                    });
-
-
-            },5000);
-
-
-    },
-
-
-
     handlePlayUri: function(uri) {
 
 
-        let id =
+        const stationId =
             uri.replace(
-                "radio_fip/",
-                ""
+                PLUGIN_NAME + '/',
+                ''
             );
 
 
-        let station =
-            Stations.find(
-                s => s.id === id
+        const station =
+            this.stations.find(
+                (item) =>
+                    item.id === stationId
             );
 
 
-        if(!station){
+        if (!station) {
+
+
+            this.logger.error(
+                '[radio_fip] Station not found: ' +
+                stationId
+            );
+
 
             return;
 
@@ -237,50 +247,153 @@ module.exports = MusicService.extend({
 
 
         this.logger.info(
-            `[radio_fip] Playing ${station.title}`
+            '[radio_fip] Playing ' +
+            station.title
         );
 
 
-        this.startMetadata(
-            station
-        );
+        this.startMetadata();
 
 
         return {
 
+
             uri:
                 station.stream,
 
-            service:
-                "radio_fip",
 
             title:
                 station.title,
 
+
             albumart:
+                IMAGE_PATH +
                 station.logo
+
 
         };
 
+    },
+
+
+    startMetadata: function() {
+
+
+        this.stopMetadata();
+
+
+        if (
+            !this.currentStation ||
+            !this.currentStation.metadataId
+        ) {
+
+
+            this.logger.info(
+                '[radio_fip] Metadata unavailable'
+            );
+
+
+            return;
+
+        }
+
+
+
+        this.metadataTimer =
+            setInterval(
+
+                () => {
+
+
+                    this.metadata.get(
+
+                        this.currentStation,
+
+                        (info) => {
+
+
+                            if (!info) {
+
+                                return;
+
+                            }
+
+
+                            this.commandRouter.pushState({
+
+                                status: 'play',
+
+                                service:
+                                    PLUGIN_NAME,
+
+                                title:
+                                    info.title,
+
+                                artist:
+                                    info.artist,
+
+                                album:
+                                    info.album,
+
+                                albumart:
+                                    info.albumArt ||
+                                    IMAGE_PATH +
+                                    'fip-cover-color.png'
+
+                            });
+
+
+                        }
+
+                    );
+
+
+                },
+
+                5000
+
+            );
+
+
+    },
+
+
+    stopMetadata: function() {
+
+
+        if (this.metadataTimer) {
+
+
+            clearInterval(
+                this.metadataTimer
+            );
+
+
+            this.metadataTimer = null;
+
+
+            this.logger.info(
+                '[radio_fip] Metadata stopped'
+            );
+
+        }
 
     },
 
 
     stop: function() {
 
-        this.clearTimer();
+        this.stopMetadata();
 
     },
 
 
-    pause: function(){},
+    pause: function() {
 
-    resume: function(){},
+    },
 
 
-    getServiceName: function(){
-
-        return "Radio FIP";
+    resume: function() {
 
     }
 
