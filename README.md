@@ -1,4 +1,4 @@
-# radio-FIP Volumio 3 plugin
+# Radio FIP Volumio 3 plugin
 
 The FLAC version doesn't offer a static url for streaming. One has to query the RP API instead. The API returns the url of the first event containing 1-8 songs to play. Furthermore it contains the event id needed for querying the second event and so on.
 
