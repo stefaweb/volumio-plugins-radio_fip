@@ -1,1 +1,1 @@
-# 80s80s Volumio2 plugin
+# Radio FIP plugin for Volumio
