@@ -1,6 +1,18 @@
 #!/bin/bash
 
-echo "Installing 80s80s radio Dependencies"
+set -e
 
-#requred to end the plugin install
+echo "Installing radio_fip dependencies"
+
+cd "$(dirname "$0")"
+
+npm install --production
+
+if [ ! -d "node_modules/kew" ]; then
+    echo "ERROR: kew not installed"
+    exit 1
+fi
+
+echo "radio_fip dependencies installed"
+
 echo "plugininstallend"
