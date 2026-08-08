@@ -1,4 +1,4 @@
-# Radio FIP Plugin for Volumio
+# FIP Radio Plugin for Volumio
 
 DEV - DO NOT UPLOAD - CAN KILL YOUR VOLUMIO INSTALL
 
