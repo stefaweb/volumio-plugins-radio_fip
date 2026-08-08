@@ -1,5 +1,8 @@
 # Radio FIP Plugin for Volumio
 
+DEV - DO NOT UPLOAD
+
+
 ## Description
 
 `radio_fip` is a Volumio music service plugin providing access to the FIP radio channels from Radio France.
