@@ -9,13 +9,16 @@
     "prettyName": "Radio FIP",
     "icon": "fa-headphones",
     "plugin_type": "music_service",
-    "details": "FIP Radio plugin for Volumio",
-    "changelog": "",
+    "os": [
+      "buster",
+      "bookworm"
+    ],
     "architectures": [
       "armhf",
-      "amd64",
-      "i386"
-    ]
+      "amd64"
+    ],
+    "details": "FIP Radio plugin for Volumio",
+    "changelog": ""
   },
   "dependencies": {},
   "engines": {
