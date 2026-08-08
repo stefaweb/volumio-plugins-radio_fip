@@ -1,5 +1,9 @@
 'use strict';
 
+console.log('[radio_fip] index.js loading');
+
+const MusicService = require('music_service');
+
 var libQ = require('kew');
 var fs = require('fs');
 var path = require('path');
