@@ -1,401 +1,436 @@
 'use strict';
 
-const MusicService = require('music_service');
-const fs = require('fs');
-const path = require('path');
+var libQ = require('kew');
+var fs = require('fs');
+var path = require('path');
 
-const Metadata = require('./metadata');
-
-
-const PLUGIN_NAME = 'radio_fip';
-
-const IMAGE_PATH =
-    '/data/plugins/music_service/' +
-    PLUGIN_NAME +
-    '/images/';
+var Metadata = require('./metadata');
 
 
-module.exports = MusicService.extend({
+module.exports = RadioFip;
 
 
-    constructor: function(context) {
+function RadioFip(context) {
 
-        this.context = context;
+    var self = this;
 
-        this.commandRouter =
-            context.coreCommand;
+    self.context = context;
 
-        this.logger =
-            context.logger;
+    self.commandRouter = context.coreCommand;
+    self.logger = context.logger;
 
+    self.serviceName = 'radio_fip';
+
+    self.stations = [];
+    self.currentStation = null;
+    self.metadataTimer = null;
+
+    self.metadata = new Metadata(self.logger);
+
+    self.loadStations();
+
+    self.logger.info('[radio_fip] Constructor loaded');
+
+}
+
+
+// ----------------------------------------------------------
+// Volumio lifecycle
+// ----------------------------------------------------------
+
+RadioFip.prototype.onVolumioStart = function() {
+
+    this.logger.info('[radio_fip] onVolumioStart');
+
+    return libQ.resolve();
+
+};
+
+
+RadioFip.prototype.onStart = function() {
+
+    var self = this;
+
+    self.logger.info('[radio_fip] Starting');
+
+    self.commandRouter.volumioAddToBrowseSources({
+
+        name: 'Radio FIP',
+
+        uri: 'radio_fip',
+
+        plugin_type: 'music_service',
+
+        plugin_name: 'radio_fip',
+
+        albumart:
+            '/albumart?sourceicon=music_service/radio_fip/images/fip-cover-color.png'
+
+    });
+
+
+    return libQ.resolve();
+
+};
+
+
+RadioFip.prototype.onStop = function() {
+
+    this.stopMetadata();
+
+    return libQ.resolve();
+
+};
+
+
+// ----------------------------------------------------------
+// Configuration
+// ----------------------------------------------------------
+
+RadioFip.prototype.getConfigurationFiles = function() {
+
+    return [];
+
+};
+
+
+RadioFip.prototype.getUIConfig = function() {
+
+    return {};
+
+};
+
+
+// ----------------------------------------------------------
+// Stations
+// ----------------------------------------------------------
+
+RadioFip.prototype.loadStations = function() {
+
+    try {
+
+        var file = path.join(
+            __dirname,
+            'radio_stations.json'
+        );
+
+
+        this.stations =
+            JSON.parse(
+                fs.readFileSync(
+                    file,
+                    'utf8'
+                )
+            );
+
+
+        this.logger.info(
+            '[radio_fip] Loaded ' +
+            this.stations.length +
+            ' stations'
+        );
+
+
+    }
+    catch(error) {
+
+        this.logger.error(
+            '[radio_fip] Load stations error: ' +
+            error.message
+        );
 
         this.stations = [];
 
-        this.currentStation = null;
+    }
 
-        this.metadataTimer = null;
+};
 
 
-        this.metadata =
-            new Metadata(
-                this.logger
-            );
+// ----------------------------------------------------------
+// Browse
+// ----------------------------------------------------------
 
+RadioFip.prototype.handleBrowseUri = function(uri) {
 
-        this.loadStations();
+    var self = this;
 
+    var items = [];
 
-        this.logger.info(
-            '[radio_fip] Plugin created'
-        );
 
-    },
+    self.stations.forEach(function(station) {
 
+        items.push({
 
-    loadStations: function() {
+            service: 'radio_fip',
 
-        try {
+            type: 'webradio',
 
-            const file =
-                path.join(
-                    __dirname,
-                    'radio_stations.json'
-                );
+            title: station.title,
 
+            uri:
+                'radio_fip/' +
+                station.id,
 
-            this.stations =
-                JSON.parse(
-                    fs.readFileSync(
-                        file,
-                        'utf8'
-                    )
-                );
+            albumart:
+                '/albumart?sourceicon=music_service/radio_fip/images/' +
+                station.logo
 
+        });
 
-            this.logger.info(
-                '[radio_fip] Loaded ' +
-                this.stations.length +
-                ' stations'
-            );
+    });
 
 
-        } catch (error) {
+    return libQ.resolve({
 
-            this.logger.error(
-                '[radio_fip] Unable to load stations: ' +
-                error.message
-            );
+        navigation: {
 
-        }
+            lists: [
 
-    },
+                {
 
+                    title: 'Radio FIP',
 
-    onVolumioStart: function() {
-
-        this.logger.info(
-            '[radio_fip] Started'
-        );
-
-    },
-
-
-    onStop: function() {
-
-        this.stopMetadata();
-
-    },
-
-
-    getConfigurationFiles: function() {
-
-        return [];
-
-    },
-
-
-    getUIConfig: function() {
-
-        return {};
-
-    },
-
-
-    getServiceName: function() {
-
-        return 'Radio FIP';
-
-    },
-
-
-    browse: function(uri) {
-
-
-        let items = [];
-
-
-        this.stations.forEach(
-            (station) => {
-
-
-                items.push({
-
-                    service: PLUGIN_NAME,
-
-                    type: 'station',
-
-                    title:
-                        station.title,
-
-                    uri:
-                        PLUGIN_NAME +
-                        '/' +
-                        station.id,
-
-                    albumart:
-                        IMAGE_PATH +
-                        station.logo
-
-                });
-
-
-            }
-        );
-
-
-        this.commandRouter.executeOnPlugin(
-            'music_service',
-            PLUGIN_NAME,
-            'handleBrowseResult',
-            {
-
-                navigation: {
-
-                    lists: [
-
-                        {
-
-                            title: 'Radio FIP',
-
-                            items: items
-
-                        }
-
-                    ]
+                    items: items
 
                 }
 
-            }
+            ]
+
+        }
+
+    });
+
+};
+
+
+// ----------------------------------------------------------
+// Playback
+// ----------------------------------------------------------
+
+RadioFip.prototype.explodeUri = function(uri) {
+
+    var self = this;
+
+    var id =
+        uri.replace(
+            'radio_fip/',
+            ''
         );
 
 
-    },
+    var station =
+        self.stations.find(function(item) {
+
+            return item.id === id;
+
+        });
 
 
-    explodeUri: function(uri) {
+    if (!station) {
 
-        return [
-
-            {
-
-                service: PLUGIN_NAME,
-
-                type: 'station',
-
-                uri: uri
-
-            }
-
-        ];
-
-    },
-
-
-    handlePlayUri: function(uri) {
-
-
-        const stationId =
-            uri.replace(
-                PLUGIN_NAME + '/',
-                ''
-            );
-
-
-        const station =
-            this.stations.find(
-                (item) =>
-                    item.id === stationId
-            );
-
-
-        if (!station) {
-
-
-            this.logger.error(
-                '[radio_fip] Station not found: ' +
-                stationId
-            );
-
-
-            return;
-
-        }
-
-
-        this.currentStation =
-            station;
-
-
-        this.logger.info(
-            '[radio_fip] Playing ' +
-            station.title
+        return libQ.reject(
+            new Error('Station not found')
         );
-
-
-        this.startMetadata();
-
-
-        return {
-
-
-            uri:
-                station.stream,
-
-
-            title:
-                station.title,
-
-
-            albumart:
-                IMAGE_PATH +
-                station.logo
-
-
-        };
-
-    },
-
-
-    startMetadata: function() {
-
-
-        this.stopMetadata();
-
-
-        if (
-            !this.currentStation ||
-            !this.currentStation.metadataId
-        ) {
-
-
-            this.logger.info(
-                '[radio_fip] Metadata unavailable'
-            );
-
-
-            return;
-
-        }
-
-
-
-        this.metadataTimer =
-            setInterval(
-
-                () => {
-
-
-                    this.metadata.get(
-
-                        this.currentStation,
-
-                        (info) => {
-
-
-                            if (!info) {
-
-                                return;
-
-                            }
-
-
-                            this.commandRouter.pushState({
-
-                                status: 'play',
-
-                                service:
-                                    PLUGIN_NAME,
-
-                                title:
-                                    info.title,
-
-                                artist:
-                                    info.artist,
-
-                                album:
-                                    info.album,
-
-                                albumart:
-                                    info.albumArt ||
-                                    IMAGE_PATH +
-                                    'fip-cover-color.png'
-
-                            });
-
-
-                        }
-
-                    );
-
-
-                },
-
-                5000
-
-            );
-
-
-    },
-
-
-    stopMetadata: function() {
-
-
-        if (this.metadataTimer) {
-
-
-            clearInterval(
-                this.metadataTimer
-            );
-
-
-            this.metadataTimer = null;
-
-
-            this.logger.info(
-                '[radio_fip] Metadata stopped'
-            );
-
-        }
-
-    },
-
-
-    stop: function() {
-
-        this.stopMetadata();
-
-    },
-
-
-    pause: function() {
-
-    },
-
-
-    resume: function() {
 
     }
 
 
-});
+    return libQ.resolve([{
+
+        service: 'radio_fip',
+
+        type: 'track',
+
+        title: station.title,
+
+        name: station.title,
+
+        uri: station.stream,
+
+        albumart:
+            '/albumart?sourceicon=music_service/radio_fip/images/' +
+            station.logo,
+
+        duration: 0,
+
+        streaming: true
+
+    }]);
+
+};
+
+
+
+RadioFip.prototype.clearAddPlayTrack = function(track) {
+
+    return libQ.resolve();
+
+};
+
+
+
+RadioFip.prototype.handlePlayUri = function(uri) {
+
+    var id =
+        uri.replace(
+            'radio_fip/',
+            ''
+        );
+
+
+    var station =
+        this.stations.find(function(item) {
+
+            return item.id === id;
+
+        });
+
+
+    if (!station) {
+
+        this.logger.error(
+            '[radio_fip] Station not found ' + id
+        );
+
+        return;
+
+    }
+
+
+    this.currentStation = station;
+
+
+    this.startMetadata();
+
+
+    return {
+
+        uri: station.stream,
+
+        title: station.title,
+
+        albumart:
+            '/albumart?sourceicon=music_service/radio_fip/images/' +
+            station.logo
+
+    };
+
+};
+
+
+// ----------------------------------------------------------
+// Metadata
+// ----------------------------------------------------------
+
+RadioFip.prototype.startMetadata = function() {
+
+    var self = this;
+
+
+    self.stopMetadata();
+
+
+    if (!self.currentStation ||
+        !self.currentStation.metadataId) {
+
+        return;
+
+    }
+
+
+    self.metadataTimer =
+        setInterval(function() {
+
+
+            self.metadata.get(
+
+                self.currentStation,
+
+                function(info) {
+
+
+                    if (!info) {
+
+                        return;
+
+                    }
+
+
+                    self.commandRouter.pushState({
+
+                        status: 'play',
+
+                        service: 'radio_fip',
+
+                        title: info.title,
+
+                        artist: info.artist,
+
+                        album: info.album,
+
+                        albumart:
+                            info.albumArt ||
+                            '/albumart?sourceicon=music_service/radio_fip/images/fip-cover-color.png'
+
+                    });
+
+
+                }
+
+            );
+
+
+        },5000);
+
+
+};
+
+
+
+RadioFip.prototype.stopMetadata = function() {
+
+    if (this.metadataTimer) {
+
+        clearInterval(
+            this.metadataTimer
+        );
+
+        this.metadataTimer = null;
+
+    }
+
+};
+
+
+// ----------------------------------------------------------
+// Player controls
+// ----------------------------------------------------------
+
+RadioFip.prototype.stop = function() {
+
+    this.stopMetadata();
+
+    return libQ.resolve();
+
+};
+
+
+RadioFip.prototype.pause = function() {
+
+    return libQ.resolve();
+
+};
+
+
+RadioFip.prototype.resume = function() {
+
+    return libQ.resolve();
+
+};
+
+
+RadioFip.prototype.search = function() {
+
+    return libQ.resolve([]);
+
+};
