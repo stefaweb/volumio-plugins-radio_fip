@@ -1,7 +1,7 @@
 {
   "PLUGIN_CONFIGURATION": "Radio FIP Configuration",
   "NO_CONFIGURATION_AVAILABLE": "No configuration available",
-  "PLUGIN_NAME": "Radio FIP",
+  "PLUGIN_NAME": "FIP Radio",
 
   "WAIT_FOR_RADIO_CHANNEL": "Please wait for radio channel....",
   "STOP_RADIO_CHANNEL": "Stopped Radio FIP",
