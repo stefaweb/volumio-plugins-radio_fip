@@ -93,7 +93,7 @@ ControllerFIP.prototype.addToBrowseSources = function () {
 
     self.commandRouter.volumioAddToBrowseSources({
 
-        name: "FIP",
+        name: "FIP Radio",
 
         uri: "radio_fip",
 
