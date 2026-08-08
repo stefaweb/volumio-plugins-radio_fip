@@ -1,27 +1,38 @@
 {
-  "name": "radio_fip",
-  "version": "1.0.0",
-  "description": "FIP Radio plugin for Volumio",
-  "main": "index.js",
-  "author": "Stef",
-  "license": "GPL-3.0",
-  "volumio_info": {
-    "prettyName": "Radio FIP",
-    "icon": "fa-headphones",
-    "plugin_type": "music_service",
-    "os": [
-      "buster",
-      "bookworm"
-    ],
-    "architectures": [
-      "armhf",
-      "amd64"
-    ],
-    "details": "FIP Radio plugin for Volumio",
-    "changelog": ""
-  },
-  "dependencies": {},
-  "engines": {
-    "node": ">=12.0.0"
-  }
+    "name": "radio_fip",
+    "version": "1.0.0",
+    "description": "FIP Radio Plugin for Volumio",
+    "main": "index.js",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "author": "Stef",
+    "license": "ISC",
+
+    "volumio_info": {
+        "prettyName": "FIP Radio",
+        "icon": "fa-headphones",
+        "plugin_type": "music_service",
+        "os": [
+            "bookworm"
+        ],
+        "details": "FIP Radio Plugin for Volumio",
+        "changelog": "",
+        "architectures": [
+            "amd64",
+            "armhf",
+            "arm64"
+        ]
+    },
+
+    "dependencies": {
+        "fs-extra": "^0.28.0",
+        "kew": "^0.7.0",
+        "v-conf": "^1.4.0"
+    },
+
+    "engines": {
+        "volumio": ">=0",
+        "node": ">=14.15.4"
+    }
 }
