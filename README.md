@@ -1,6 +1,6 @@
 # Radio FIP Plugin for Volumio
 
-DEV - DO NOT UPLOAD
+DEV - DO NOT UPLOAD - CAN KILL YOUR VOLUMIO INSALL
 
 
 ## Description
