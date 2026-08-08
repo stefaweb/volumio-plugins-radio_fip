@@ -7,7 +7,7 @@
   "license": "GPL-3.0",
 
   "volumio_info": {
-    "prettyName": "Radio FIP",
+    "prettyName": "FIP Radio",
     "icon": "fa-headphones",
     "plugin_type": "music_service",
     "os": [
