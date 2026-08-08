@@ -1,3 +1,5 @@
+#!/bin/bash
+
 rm -f radio_fip.zip
 
 cd radio_fip
