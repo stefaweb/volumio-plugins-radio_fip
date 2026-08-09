@@ -5,9 +5,7 @@ var fs = require('fs-extra');
 
 module.exports = ControllerFIP;
 
-
 function ControllerFIP(context) {
-
     var self = this;
 
     self.context = context;
@@ -15,13 +13,39 @@ function ControllerFIP(context) {
     self.logger = context.logger;
     self.configManager = context.configManager;
 
-    self.state = {};
     self.serviceName = "radio_fip";
+    self.radioStations = [];
 }
 
+// ------------------------------------------------------
+// Logo
+// ------------------------------------------------------
 
-ControllerFIP.prototype.onVolumioStart = function () {
+ControllerFIP.prototype.getStationLogo = function(station) {
+    var defaultLogo = "fip-cover-color.png";
 
+    if (!station || !station.logo) {
+        return defaultLogo;
+    }
+
+    var logoPath = __dirname + "/images/" + station.logo;
+
+    if (fs.existsSync(logoPath)) {
+        return station.logo;
+    }
+
+    this.logger.info(
+        "[radio_fip] Missing logo " + station.logo
+    );
+
+    return defaultLogo;
+};
+
+// ------------------------------------------------------
+// Start
+// ------------------------------------------------------
+
+ControllerFIP.prototype.onVolumioStart = function() {
     var self = this;
 
     self.configFile =
@@ -30,26 +54,21 @@ ControllerFIP.prototype.onVolumioStart = function () {
             'config.json'
         );
 
-    self.logger.info('[radio_fip] onVolumioStart');
+    self.logger.info(
+        '[radio_fip] onVolumioStart'
+    );
 
     return libQ.resolve();
 };
 
-
-ControllerFIP.prototype.getConfigurationFiles = function () {
-
+ControllerFIP.prototype.getConfigurationFiles = function() {
     return [
         'config.json'
     ];
-
 };
 
-
-ControllerFIP.prototype.onStart = function () {
-
+ControllerFIP.prototype.onStart = function() {
     var self = this;
-
-    self.logger.info('[radio_fip] Starting');
 
     self.mpdPlugin =
         self.commandRouter.pluginManager.getPlugin(
@@ -57,336 +76,346 @@ ControllerFIP.prototype.onStart = function () {
             'mpd'
         );
 
-
+    self.loadRadioI18nStrings();
     self.addRadioResource();
 
-    self.addToBrowseSources();
+    return self.addToBrowseSources()
+        .then(function() {
+            self.logger.info(
+                '[radio_fip] Starting'
+            );
+        });
+};
 
-
+ControllerFIP.prototype.onStop = function() {
     return libQ.resolve();
-
 };
 
-
-ControllerFIP.prototype.onStop = function () {
-
+ControllerFIP.prototype.onRestart = function() {
     return libQ.resolve();
-
 };
 
-
-ControllerFIP.prototype.onRestart = function () {
-
-    return libQ.resolve();
-
-};
-
-
-
 // ------------------------------------------------------
-// Sources Volumio
+// Browse source
 // ------------------------------------------------------
 
-ControllerFIP.prototype.addToBrowseSources = function () {
-
-    var self = this;
-
-    self.commandRouter.volumioAddToBrowseSources({
-
-        name: "FIP Radio",
-
-        uri: "radio_fip",
-
-        plugin_type: "music_service",
-
-        plugin_name: "radio_fip",
-
-        albumart:
-        "/albumart?sourceicon=music_service/radio_fip/images/fip.svg"
-
-    });
-
-};
-
-
-
-// ------------------------------------------------------
-// Navigation
-// ------------------------------------------------------
-
-ControllerFIP.prototype.handleBrowseUri = function(uri) {
-
+ControllerFIP.prototype.addToBrowseSources = function() {
     var self = this;
 
     self.logger.info(
-        '[radio_fip] browse ' + uri
+        '[radio_fip] Registering browse source'
     );
 
-
-    if(uri === "radio_fip") {
-
-        return self.getRootContent();
-
-    }
-
-
-    if(uri.startsWith("radio_fip/")) {
-
-        return self.getStationContent(uri);
-
-    }
-
-
-    return libQ.reject();
-
-};
-
-
-
-ControllerFIP.prototype.getRootContent = function() {
-
-    var self = this;
-
-    var defer = libQ.defer();
-
-    var response = {
-
-        navigation: {
-
-            lists: [
-
-                {
-
-                    availableListViews:["list"],
-
-                    items:[]
-
-                }
-
-            ]
-
-        }
-
-    };
-
-
-    for(var key in self.rootStations) {
-
-        response.navigation.lists[0].items.push({
-
-            service:self.serviceName,
-
-            type:"folder",
-
-            title:self.rootStations[key].title,
-
-            uri:self.rootStations[key].uri
-
-        });
-
-    }
-
-
-    defer.resolve(response);
-
-    return defer.promise;
-
-};
-
-
-
-
-ControllerFIP.prototype.getStationContent = function(uri) {
-
-    var self=this;
-
-    var defer=libQ.defer();
-
-
-    var station =
-        uri.replace("radio_fip/","");
-
-
-    var response={
-
-        navigation:{
-
-            lists:[{
-
-                availableListViews:["list"],
-
-                items:[]
-
-            }]
-
-        }
-
-    };
-
-
-    self.radioStations[station].forEach(function(item,index){
-
-
-        response.navigation.lists[0].items.push({
-
-            service:self.serviceName,
-
-            type:"mywebradio",
-
-            title:item.title,
-
-            uri:
-            "webradio/" + station + "/" + index
-
-        });
-
-
+    self.commandRouter.volumioAddToBrowseSources({
+        name: "FIP Radio",
+        uri: "fip",
+        plugin_type: "music_service",
+        plugin_name: "radio_fip",
+        albumart:
+            "/albumart?sourceicon=music_service/radio_fip/images/fip-cover-color.png"
     });
-
-
-    defer.resolve(response);
-
-    return defer.promise;
-
-};
-
-
-
-// ------------------------------------------------------
-// Lecture
-// ------------------------------------------------------
-
-ControllerFIP.prototype.explodeUri=function(uri){
-
-    var self=this;
-
-    var defer=libQ.defer();
-
-    var result=[];
-
-
-    var parts=uri.split("/");
-
-
-    if(parts[0] !== "webradio") {
-
-        defer.resolve();
-
-        return defer.promise;
-
-    }
-
-
-    var station=parts[1];
-
-    var index=parseInt(parts[2]);
-
-
-    var radio=self.radioStations[station][index];
-
-
-    result.push({
-
-        service:self.serviceName,
-
-        type:"track",
-
-        title:radio.title,
-
-        name:radio.title,
-
-        uri:radio.url,
-
-        albumart:radio.cover,
-
-        duration:1000
-
-    });
-
-
-    defer.resolve(result);
-
-
-    return defer.promise;
-
-};
-
-
-
-
-
-ControllerFIP.prototype.clearAddPlayTrack=function(track){
-
-    var self=this;
-
-
-    return self.mpdPlugin.sendMpdCommand('stop',[])
-
-    .then(function(){
-
-        return self.mpdPlugin.sendMpdCommand('clear',[]);
-
-    })
-
-    .then(function(){
-
-        return self.mpdPlugin.sendMpdCommand(
-
-            'add "'+track.uri+'"',
-
-            []
-
-        );
-
-    })
-
-    .then(function(){
-
-        return self.mpdPlugin.sendMpdCommand(
-
-            'play',
-
-            []
-
-        );
-
-    });
-
-
-};
-
-
-
-
-// ------------------------------------------------------
-// Ressources
-// ------------------------------------------------------
-
-ControllerFIP.prototype.addRadioResource=function(){
-
-    var self=this;
-
-
-    var data =
-        fs.readJsonSync(
-            __dirname+'/radio_stations.json'
-        );
-
-
-    self.rootStations=data.rootStations;
-
-    self.radioStations=data.stations;
-
-
-};
-
-
-
-
-// ------------------------------------------------------
-
-ControllerFIP.prototype.search=function(){
 
     return libQ.resolve();
+};
+
+// ------------------------------------------------------
+// Browse navigation
+// ------------------------------------------------------
+
+ControllerFIP.prototype.handleBrowseUri = function(curUri) {
+    var self = this;
+
+    self.logger.info(
+        "[radio_fip] handleBrowseUri: " + curUri
+    );
+
+    if (!curUri || curUri === "fip" || curUri === "fip/") {
+        return self.getRootContent();
+    }
+
+    if (curUri.indexOf("fip/") === 0) {
+        return self.getStationContent(curUri);
+    }
+
+    return libQ.resolve({
+        navigation: {
+            lists: [
+                {
+                    availableListViews: ["list"],
+                    items: []
+                }
+            ]
+        }
+    });
+};
+
+ControllerFIP.prototype.getRootContent = function() {
+    var self = this;
+
+    var items = [];
+
+    if (!self.radioStations) {
+        self.radioStations = [];
+    }
+
+    self.radioStations.forEach(function(station) {
+        items.push({
+            service: self.serviceName,
+            type: "folder",
+            title: station.title,
+            uri: "fip/" + station.id,
+            albumart:
+                "/albumart?sourceicon=music_service/radio_fip/images/" +
+                self.getStationLogo(station)
+        });
+    });
+
+    self.logger.info(
+        "[radio_fip] Root items: " + items.length
+    );
+
+    return libQ.resolve({
+        navigation: {
+            lists: [
+                {
+                    availableListViews: ["list"],
+                    items: items
+                }
+            ]
+        }
+    });
+};
+ControllerFIP.prototype.getStationContent = function(uri) {
+    var self = this;
+
+    var stationId =
+        uri.replace("fip/", "");
+
+    var station =
+        self.radioStations.find(function(item) {
+            return item.id === stationId;
+        });
+
+    var items = [];
+
+    if (station) {
+
+        self.logger.info(
+            "[radio_fip] Station found: " +
+            station.title
+        );
+
+        self.logger.info(
+            "[radio_fip] URL: " +
+            station.url
+        );
+
+        items.push({
+            service: self.serviceName,
+            type: "track",
+            title: station.title,
+            uri: "fip/" + station.id,
+            albumart:
+                "/albumart?sourceicon=music_service/radio_fip/images/" +
+                self.getStationLogo(station)
+        });
+
+    }
+    else {
+
+        self.logger.error(
+            "[radio_fip] Station not found: " +
+            stationId
+        );
+
+    }
+
+    return libQ.resolve({
+        navigation: {
+            lists: [
+                {
+                    availableListViews: ["list"],
+                    items: items
+                }
+            ]
+        }
+    });
+};
+
+// ------------------------------------------------------
+// Explode URI
+// ------------------------------------------------------
+
+ControllerFIP.prototype.explodeUri = function(uri) {
+    var self = this;
+
+    var result = [];
+
+    self.logger.info(
+        "[radio_fip] explodeUri: " + uri
+    );
+
+    if (!uri) {
+        return libQ.resolve(result);
+    }
+
+    var parts = uri.split("/");
+
+    if (parts[0] !== "fip") {
+        return libQ.resolve(result);
+    }
+
+    var station =
+        self.radioStations.find(function(item) {
+            return item.id === parts[1];
+        });
+
+    if (!station) {
+        return libQ.resolve(result);
+    }
+
+    result.push({
+        service: self.serviceName,
+        type: "track",
+        trackType: "FIP Radio",
+        title: station.title,
+        name: station.title,
+        uri: station.url,
+        albumart:
+            "/albumart?sourceicon=music_service/radio_fip/images/" +
+            self.getStationLogo(station),
+        duration: 0
+    });
+
+    return libQ.resolve(result);
+};
+
+// ------------------------------------------------------
+// MPD playback
+// ------------------------------------------------------
+
+ControllerFIP.prototype.clearAddPlayTrack = function(track) {
+    var self = this;
+
+    self.logger.info(
+        "[radio_fip] Playing " + track.uri
+    );
+
+    if (!self.mpdPlugin) {
+        return libQ.reject(
+            "MPD plugin unavailable"
+        );
+    }
+
+    return self.mpdPlugin.sendMpdCommand(
+        "stop",
+        []
+    )
+    .then(function() {
+        return self.mpdPlugin.sendMpdCommand(
+            "clear",
+            []
+        );
+    })
+    .then(function() {
+        return self.mpdPlugin.sendMpdCommand(
+            'add "' + track.uri + '"',
+            []
+        );
+    })
+    .then(function() {
+        return self.mpdPlugin.sendMpdCommand(
+            "play",
+            []
+        );
+    });
+};
+
+ // ------------------------------------------------------
+// Load stations
+// ------------------------------------------------------
+
+ControllerFIP.prototype.addRadioResource = function() {
+    var self = this;
+
+    try {
+
+        var radioResource =
+            fs.readJsonSync(
+                __dirname + "/radio_stations.json"
+            );
+
+        if (Array.isArray(radioResource)) {
+
+            self.radioStations = radioResource;
+
+        }
+        else if (radioResource.stations) {
+
+            self.radioStations =
+                radioResource.stations;
+
+        }
+
+    }
+    catch (e) {
+
+        self.logger.error(
+            "[radio_fip] Cannot load radio_stations.json: " +
+            e.message
+        );
+
+        self.radioStations = [];
+
+    }
+
+    self.logger.info(
+        "[radio_fip] Loaded " +
+        self.radioStations.length +
+        " stations"
+    );
+};
+
+// ------------------------------------------------------
+// I18n
+// ------------------------------------------------------
+
+ControllerFIP.prototype.loadRadioI18nStrings = function() {
+    var self = this;
+
+    try {
+
+        self.i18nStrings =
+            fs.readJsonSync(
+                __dirname + "/i18n/strings_en.json"
+            );
+
+    }
+    catch (e) {
+
+        self.i18nStrings = {};
+
+    }
+};
+
+ControllerFIP.prototype.getRadioI18nString = function(key) {
+
+    if (this.i18nStrings &&
+        this.i18nStrings[key]) {
+
+        return this.i18nStrings[key];
+
+    }
+
+    return key;
+};
+
+// ------------------------------------------------------
+// Search
+// ------------------------------------------------------
+
+ControllerFIP.prototype.search = function() {
+
+    return libQ.resolve([]);
 
 };
