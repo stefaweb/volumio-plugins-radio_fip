@@ -22,7 +22,7 @@ function ControllerFIP(context) {
 // ------------------------------------------------------
 
 ControllerFIP.prototype.getStationLogo = function(station) {
-    var defaultLogo = "fip-cover-color.png";
+    var defaultLogo = "fip-cover-black.png";
 
     if (!station || !station.logo) {
         return defaultLogo;
@@ -112,7 +112,7 @@ ControllerFIP.prototype.addToBrowseSources = function() {
         plugin_type: "music_service",
         plugin_name: "radio_fip",
         albumart:
-            "/albumart?sourceicon=music_service/radio_fip/images/fip-cover-color.png"
+            "/albumart?sourceicon=music_service/radio_fip/images/fip-cover-black.png"
     });
 
     return libQ.resolve();
