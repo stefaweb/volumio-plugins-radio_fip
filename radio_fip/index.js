@@ -159,6 +159,7 @@ ControllerFIP.prototype.getRootContent = function() {
     }
 
     self.radioStations.forEach(function(station) {
+
         items.push({
             service: self.serviceName,
             type: "folder",
@@ -168,6 +169,7 @@ ControllerFIP.prototype.getRootContent = function() {
                 "/albumart?sourceicon=music_service/radio_fip/images/" +
                 self.getStationLogo(station)
         });
+
     });
 
     self.logger.info(
@@ -185,6 +187,7 @@ ControllerFIP.prototype.getRootContent = function() {
         }
     });
 };
+
 ControllerFIP.prototype.getStationContent = function(uri) {
     var self = this;
 
@@ -205,19 +208,24 @@ ControllerFIP.prototype.getStationContent = function(uri) {
             station.title
         );
 
+        var streamUrl = station.stream;
+
         self.logger.info(
             "[radio_fip] URL: " +
-            station.url
+            streamUrl
         );
 
         items.push({
             service: self.serviceName,
             type: "track",
+            trackType: "FIP Radio",
             title: station.title,
-            uri: "fip/" + station.id,
+            name: station.title,
+            uri: streamUrl,
             albumart:
                 "/albumart?sourceicon=music_service/radio_fip/images/" +
-                self.getStationLogo(station)
+                self.getStationLogo(station),
+            duration: 0
         });
 
     }
@@ -252,6 +260,10 @@ ControllerFIP.prototype.explodeUri = function(uri) {
     var result = [];
 
     self.logger.info(
+        "[radio_fip] explodeUri CALLED: " + uri
+    );
+
+    self.logger.info(
         "[radio_fip] explodeUri: " + uri
     );
 
@@ -280,12 +292,17 @@ ControllerFIP.prototype.explodeUri = function(uri) {
         trackType: "FIP Radio",
         title: station.title,
         name: station.title,
-        uri: station.url,
+        uri: station.stream,
         albumart:
             "/albumart?sourceicon=music_service/radio_fip/images/" +
             self.getStationLogo(station),
         duration: 0
     });
+
+    self.logger.info(
+        "[radio_fip] explodeUri result: " +
+        JSON.stringify(result)
+    );
 
     return libQ.resolve(result);
 };
@@ -331,7 +348,7 @@ ControllerFIP.prototype.clearAddPlayTrack = function(track) {
     });
 };
 
- // ------------------------------------------------------
+// ------------------------------------------------------
 // Load stations
 // ------------------------------------------------------
 

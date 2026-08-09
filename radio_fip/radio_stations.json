@@ -1,10 +1,10 @@
 [
     {
         "id": "fip",
-        "title": "FIP",
+        "title": "FIP National",
         "stream": "https://icecast.radiofrance.fr/fip-hifi.aac?id=radiofrance",
         "metadataId": 7,
-        "logo": "fip.png"
+        "logo": "fip-cover-color.png"
     },
     {
         "id": "electro",
