@@ -191,6 +191,10 @@ ControllerFIP.prototype.explodeUri = function(uri) {
 ControllerFIP.prototype.clearAddPlayTrack = function(track) {
     var self = this;
     self.logger.info(
+        '[radio_fip] Playing station=' +
+        JSON.stringify(track.station)
+    );
+    self.logger.info(
         '[radio_fip] clearAddPlayTrack ' + track.uri
     );
     if (!self.mpdPlugin) {
@@ -250,6 +254,12 @@ ControllerFIP.prototype.clearAddPlayTrack = function(track) {
             .setConsumeUpdateService(
                 self.serviceName
             );
+        self.logger.info(
+            '[radio_fip] PUSH STATE radioType=' +
+            self.state.radioType +
+            ' station=' +
+            (track.station ? track.station.title : 'undefined')
+        );
         self.commandRouter.servicePushState(
             self.state,
             self.serviceName
@@ -458,6 +468,12 @@ ControllerFIP.prototype.updateMetadata = function(station) {
             );
         }
         self.state = state;
+        self.logger.info(
+            '[radio_fip] METADATA PUSH radioType=' +
+            self.state.radioType +
+            ' station=' +
+            (station ? station.title : 'undefined')
+        );
         self.commandRouter.servicePushState(
             self.state,
             self.serviceName
