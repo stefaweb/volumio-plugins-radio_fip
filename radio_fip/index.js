@@ -257,11 +257,6 @@ ControllerFIP.prototype.clearAddPlayTrack = function(track) {
         self.logger.info(
             '[radio_fip] Playback started'
         );
-        setTimeout(function(){
-
-            self.updateAudioInfo();
-
-        }, 3000);
         if(track.station){
 
             self.startMetadataTimer(
@@ -338,125 +333,6 @@ ControllerFIP.prototype.stopMetadataTimer = function() {
         clearInterval(this.metadataTimer);
         this.metadataTimer = null;
     }
-};
-
-ControllerFIP.prototype.updateAudioInfo = function() {
-
-    var self = this;
-
-    if (!self.mpdPlugin) {
-        return;
-    }
-
-
-    self.mpdPlugin.sendMpdCommand(
-        'currentsong',
-        []
-    )
-    .then(function(result) {
-
-
-        if (!result) {
-            return;
-        }
-
-
-        self.logger.info(
-            '[radio_fip] MPD currentsong JSON ' +
-            JSON.stringify(result)
-        );
-
-
-        /*
-         * Selon version MPD / Volumio
-         */
-        var audio =
-            result.Audio ||
-            result.audio ||
-            '';
-
-
-        if (audio) {
-
-
-            var parts =
-                audio.split(':');
-
-
-            if (parts.length === 3) {
-
-
-                var samplerate =
-                    parseInt(parts[0]);
-
-                var bitdepth =
-                    parseInt(parts[1]);
-
-                var channels =
-                    parseInt(parts[2]);
-
-
-                self.state.samplerate =
-                    (samplerate / 1000)
-                    .toFixed(1) + ' kHz';
-
-
-                self.state.bitdepth =
-                    bitdepth + ' bit';
-
-
-                self.state.channels =
-                    channels;
-
-
-                self.logger.info(
-                    '[radio_fip] Audio ' +
-                    self.state.samplerate +
-                    ' ' +
-                    self.state.bitdepth +
-                    ' ' +
-                    channels +
-                    ' ch'
-                );
-
-            }
-
-        }
-
-
-        /*
-         * Recherche bitrate éventuel
-         */
-        if (result.bitrate) {
-
-            self.state.bitrate =
-                result.bitrate + ' kbps';
-
-
-            self.logger.info(
-                '[radio_fip] Bitrate ' +
-                self.state.bitrate
-            );
-
-        }
-
-
-        self.commandRouter.servicePushState(
-            self.state,
-            self.serviceName
-        );
-
-
-    })
-    .fail(function(err){
-
-        self.logger.error(
-            '[radio_fip] MPD currentsong error ' +
-            err
-        );
-
-    });
-
 };
 
 ControllerFIP.prototype.pushSongState = function(data, station) {
@@ -553,10 +429,7 @@ ControllerFIP.prototype.updateMetadata = function(station) {
             duration:0,
             seek:0
         };
-        Object.assign(
-            self.state,
-            state
-        );
+        self.state = state;
         try {
             var vState =
                 self.commandRouter.stateMachine.getState();
