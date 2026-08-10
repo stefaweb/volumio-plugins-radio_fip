@@ -16,6 +16,7 @@ function ControllerFIP(context) {
     self.radioStations = [];
     self.lastMetadata = '';
     self.metadataTimer = null;
+    self.state = {};
 }
 
 ControllerFIP.prototype.onVolumioStart = function() {
@@ -188,30 +189,31 @@ ControllerFIP.prototype.explodeUri = function(uri) {
 };
 
 ControllerFIP.prototype.clearAddPlayTrack = function(track) {
+
     var self = this;
 
     self.logger.info(
         '[radio_fip] clearAddPlayTrack ' + track.uri
     );
 
+
     if (!self.mpdPlugin) {
         return libQ.reject('MPD plugin unavailable');
     }
 
 
-    if (track.station) {
-        self.logger.info(
-            '[radio_fip] Station resolved: ' +
-            track.station.title
-        );
-    }
+    self.state = {
 
-
-    var initialState = {
         status: 'play',
+
         service: self.serviceName,
-        type: 'track',
+
+        type: 'webradio',
+
         trackType: 'FIP Radio',
+
+        radioType: '',
+
 
         title: track.station ?
             track.station.title :
@@ -221,33 +223,34 @@ ControllerFIP.prototype.clearAddPlayTrack = function(track) {
             track.station.title :
             'FIP Radio',
 
+
         artist: '',
+
         album: '',
 
-        station: track.station ?
-            track.station.title :
-            'FIP Radio',
 
         albumart:
             '/albumart?sourceicon=music_service/radio_fip/images/' +
             self.getStationLogo(track.station),
 
+
         uri: track.uri,
 
+
+        streaming: true,
+
+        disableUiControls: true,
+
+
         duration: 0,
+
         seek: 0
     };
 
 
     self.logger.info(
-        '[radio_fip] Initial state PUSH ' +
-        JSON.stringify(initialState)
-    );
-
-
-    self.commandRouter.servicePushState(
-        initialState,
-        self.serviceName
+        '[radio_fip] Initial state ' +
+        JSON.stringify(self.state)
     );
 
 
@@ -255,7 +258,8 @@ ControllerFIP.prototype.clearAddPlayTrack = function(track) {
         'stop',
         []
     )
-    .then(function() {
+
+    .then(function(){
 
         return self.mpdPlugin.sendMpdCommand(
             'clear',
@@ -263,7 +267,8 @@ ControllerFIP.prototype.clearAddPlayTrack = function(track) {
         );
 
     })
-    .then(function() {
+
+    .then(function(){
 
         return self.mpdPlugin.sendMpdCommand(
             'add "' + track.uri + '"',
@@ -271,7 +276,8 @@ ControllerFIP.prototype.clearAddPlayTrack = function(track) {
         );
 
     })
-    .then(function() {
+
+    .then(function(){
 
         return self.mpdPlugin.sendMpdCommand(
             'play',
@@ -279,21 +285,37 @@ ControllerFIP.prototype.clearAddPlayTrack = function(track) {
         );
 
     })
-    .then(function() {
+
+    .then(function(){
+
+
+        /*
+         * IMPORTANT
+         * prendre le contrôle après MPD
+         */
+
+        self.commandRouter.stateMachine
+            .setConsumeUpdateService(
+                self.serviceName
+            );
+
+
+        self.commandRouter.servicePushState(
+            self.state,
+            self.serviceName
+        );
+
 
         self.logger.info(
             '[radio_fip] Playback started'
         );
 
 
-        if (track.station) {
+        if(track.station){
 
-            self.logger.info(
-                '[radio_fip] Starting metadata timer for ' +
-                track.station.title
+            self.startMetadataTimer(
+                track.station
             );
-
-            self.startMetadataTimer(track.station);
 
         }
 
@@ -301,6 +323,7 @@ ControllerFIP.prototype.clearAddPlayTrack = function(track) {
         return true;
 
     });
+
 };
 
 ControllerFIP.prototype.addRadioResource = function() {
@@ -380,59 +403,126 @@ ControllerFIP.prototype.stopMetadataTimer = function() {
     }
 };
 
-ControllerFIP.prototype.updateMetadata = function(station) {
+ControllerFIP.prototype.pushSongState = function(data, station) {
+
     var self = this;
 
-    if (!station || !station.metadataId) {
-        self.logger.warn(
-            '[radio_fip] No metadataId for station'
-        );
-        return;
+    var state = {
+        status: 'play',
+        service: self.serviceName,
+        type: 'webradio',
+        trackType: 'FIP Radio',
+        radioType: '',
+        
+        title: data.title,
+        name: data.title,
+
+        artist: data.artist,
+        album: data.album,
+
+        albumart: data.albumart,
+
+        uri: station.stream,
+
+        streaming: true,
+        disableUiControls: true,
+
+        duration: 0,
+        seek: 0
+    };
+
+
+    /*
+     * Mise à jour de la queue Volumio
+     */
+
+    try {
+
+        var vState =
+            self.commandRouter.stateMachine.getState();
+
+
+        var queueItem =
+            self.commandRouter.stateMachine.playQueue.arrayQueue[
+                vState.position
+            ];
+
+
+        if (queueItem) {
+
+            queueItem.name = data.title;
+            queueItem.title = data.title;
+            queueItem.artist = data.artist;
+            queueItem.album = data.album;
+            queueItem.albumart = data.albumart;
+            queueItem.trackType = 'FIP Radio';
+            queueItem.duration = 0;
+
+        }
+
+
+        /*
+         * Reset timer interne
+         */
+
+        self.commandRouter.stateMachine.currentSeek = 0;
+        self.commandRouter.stateMachine.playbackStart = Date.now();
+        self.commandRouter.stateMachine.currentSongDuration = 0;
+
+        self.commandRouter.stateMachine.askedForPrefetch = false;
+        self.commandRouter.stateMachine.prefetchDone = false;
+
+
     }
+    catch(e) {
+
+        self.logger.error(
+            '[radio_fip] queue update error ' + e.message
+        );
+
+    }
+
+
+    self.logger.info(
+        '[radio_fip] PUSH STATE ' +
+        JSON.stringify(state)
+    );
+
+
+    self.commandRouter.servicePushState(
+        state,
+        self.serviceName
+    );
+
+
+};
+
+ControllerFIP.prototype.updateMetadata = function(station) {
+
+    var self = this;
 
 
     Metadata.getMetadata(station.metadataId)
     .then(function(data) {
 
+
         if (!data) {
-            self.logger.warn(
-                '[radio_fip] Empty metadata response'
-            );
             return;
         }
 
 
-        self.logger.info(
-            '[radio_fip] Metadata received ' +
-            JSON.stringify(data)
-        );
-
-
-        if (
-            !data.title &&
-            !data.artist &&
-            !data.album
-        ) {
-            self.logger.warn(
-                '[radio_fip] Empty metadata ignored'
-            );
-            return;
-        }
-
-
-        var currentMetadata =
-            data.station + '|' +
-            data.title + '|' +
+        var current =
             data.artist + '|' +
+            data.title + '|' +
             data.album;
 
 
-        if (currentMetadata === self.lastMetadata) {
+        if (current === self.lastMetadata) {
             return;
         }
 
 
-        self.lastMetadata = currentMetadata;
+        self.lastMetadata = current;
 
 
         self.logger.info(
@@ -445,67 +535,133 @@ ControllerFIP.prototype.updateMetadata = function(station) {
 
         var state = {
 
-            status: 'play',
+            status:'play',
 
-            service: self.serviceName,
+            service:self.serviceName,
 
-            type: 'track',
+            type:'webradio',
 
-            trackType: 'FIP Radio',
+            trackType:'FIP Radio',
 
+            radioType:'',
 
-            title: data.title,
+            title:data.title,
 
-            name: data.title,
+            name:data.title,
 
+            artist:data.artist,
 
-            artist: data.artist,
+            album:data.album,
 
-            album: data.album,
+            albumart:data.albumart,
 
+            uri:station.stream,
 
-            station: data.station,
+            streaming:true,
 
+            disableUiControls:true,
 
-            albumart: data.albumart,
+            duration:0,
 
-
-            uri: station.stream,
-
-
-            duration: 0,
-
-            seek: 0
-
+            seek:0
         };
 
 
-        self.logger.info(
-            '[radio_fip] Metadata state PUSH ' +
-            JSON.stringify(state)
-        );
+        self.state = state;
 
 
+
+        /*
+         * Mise à jour queue interne Volumio
+         */
+
+        try {
+
+            var vState =
+                self.commandRouter.stateMachine.getState();
+
+
+            var queueItem =
+                self.commandRouter
+                .stateMachine
+                .playQueue
+                .arrayQueue[vState.position];
+
+
+            if(queueItem){
+
+                queueItem.name = data.title;
+                queueItem.artist = data.artist;
+                queueItem.album = data.album;
+                queueItem.albumart = data.albumart;
+                queueItem.trackType = 'FIP Radio';
+
+            }
+
+
+            self.commandRouter.stateMachine.currentSeek = 0;
+
+            self.commandRouter.stateMachine.playbackStart =
+                Date.now();
+
+            self.commandRouter.stateMachine.currentSongDuration =
+                0;
+        }
+        catch(e){
+            self.logger.error(
+                '[radio_fip] queue update error ' +
+                e.message
+            );
+        }
+        self.state = state;
         self.commandRouter.servicePushState(
-            state,
+            self.state,
             self.serviceName
         );
-
-
         self.logger.info(
             '[radio_fip] Metadata PUSH done'
         );
-
-
     })
-    .catch(function(err) {
+    .catch(function(err){
 
         self.logger.error(
             '[radio_fip] metadata error ' +
             err.message
         );
-
     });
+
+};
+
+ControllerFIP.prototype.stop = function() {
+
+    var self = this;
+
+
+    self.stopMetadataTimer();
+
+
+    if(self.mpdPlugin){
+
+        return self.mpdPlugin.sendMpdCommand(
+            'stop',
+            []
+        )
+        .then(function(){
+
+            self.state.status = 'stop';
+
+            self.commandRouter.servicePushState(
+                self.state,
+                self.serviceName
+            );
+
+        });
+
+    }
+
+
+    return libQ.resolve();
+
 };
 
 ControllerFIP.prototype.search = function() {
