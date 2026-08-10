@@ -1,10 +1,10 @@
 [
     {
-        "id": "fip",
+        "id": "national",
         "title": "FIP National",
         "stream": "https://icecast.radiofrance.fr/fip-hifi.aac?id=radiofrance",
         "metadataId": 7,
-        "logo": "fip-cover-color.png"
+        "logo": "fip-national.png"
     },
     {
         "id": "electro",
@@ -17,28 +17,28 @@
         "id": "groove",
         "title": "FIP Groove",
         "stream": "https://icecast.radiofrance.fr/fipgroove-hifi.aac?id=radiofrance",
-        "metadataId": 66,
+        "metadataId": 65,
         "logo": "fip-groove.png"
     },
     {
         "id": "hiphop",
         "title": "FIP Hip Hop",
         "stream": "https://icecast.radiofrance.fr/fiphiphop-hifi.aac?id=radiofrance",
-        "metadataId": 95,
+        "metadataId": 66,
         "logo": "fip-hiphop.png"
     },
     {
         "id": "jazz",
         "title": "FIP Jazz",
         "stream": "https://icecast.radiofrance.fr/fipjazz-hifi.aac?id=radiofrance",
-        "metadataId": 65,
+        "metadataId": 64,
         "logo": "fip-jazz.png"
     },
     {
         "id": "metal",
         "title": "FIP Metal",
         "stream": "https://icecast.radiofrance.fr/fipmetal-hifi.aac?id=radiofrance",
-        "metadataId": 77,
+        "metadataId": 68,
         "logo": "fip-metal.png"
     },
     {
@@ -66,7 +66,7 @@
         "id": "rock",
         "title": "FIP Rock",
         "stream": "https://icecast.radiofrance.fr/fiprock-hifi.aac?id=radiofrance",
-        "metadataId": 64,
+        "metadataId": null,
         "logo": "fip-rock.png"
     },
     {
