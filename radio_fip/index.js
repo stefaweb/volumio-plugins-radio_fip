@@ -81,19 +81,15 @@ ControllerFIP.prototype.addToBrowseSources = function() {
 };
 
 ControllerFIP.prototype.handleBrowseUri = function(curUri) {
-
     this.logger.info(
         '[radio_fip] BROWSE CALL uri=' + curUri
     );
-
     if (!curUri || curUri === 'fip' || curUri === 'fip/') {
         return this.getRootContent();
     }
-
     if (curUri.indexOf('fip/') === 0) {
         return this.getStationContent(curUri);
     }
-
     return libQ.resolve({
         navigation: {
             lists: [{
@@ -105,75 +101,48 @@ ControllerFIP.prototype.handleBrowseUri = function(curUri) {
 };
 
 ControllerFIP.prototype.getRootContent = function() {
-
     var self = this;
     var items = [];
-
     self.radioStations.forEach(function(station) {
-
         items.push({
-
             service: self.serviceName,
-
             type: 'mywebradio',
-
             title: station.title,
-
             artist: '',
-
             album: '',
-
             icon: 'fa fa-music',
-
             uri: 'fip/' + station.id,
-
             albumart:
                 '/albumart?sourceicon=music_service/radio_fip/images/' +
                 self.getStationLogo(station)
-
         });
-
     });
-
     return libQ.resolve({
-
         navigation: {
-
             lists: [{
-
                 availableListViews: ['list'],
-
                 items: items
-
             }]
-
         }
-
     });
-
 };
 
 ControllerFIP.prototype.getStationContent = function(uri) {
     var self = this;
-
     var stationId = uri.replace(/^fip\//, '');
-
     var station = self.radioStations.find(function(item) {
         return item.id === stationId;
     });
-
     self.logger.info(
         '[radio_fip] station lookup id=' +
         stationId +
         ' result=' +
         JSON.stringify(station)
     );
-
     if (!station) {
         self.logger.error(
             '[radio_fip] Station not found: ' + stationId
         );
-
         return libQ.resolve({
             navigation: {
                 lists: [{
@@ -183,12 +152,10 @@ ControllerFIP.prototype.getStationContent = function(uri) {
             }
         });
     }
-
     self.logger.info(
         '[radio_fip] getStationContent station=' +
         station.title
     );
-
     return libQ.resolve({
         navigation: {
             lists: [{
@@ -212,197 +179,122 @@ ControllerFIP.prototype.getStationContent = function(uri) {
 };
 
 ControllerFIP.prototype.explodeUri = function(uri) {
-
     var self = this;
-
     self.logger.info(
         '[radio_fip] explodeUri uri=' + uri
     );
-
-
     var stationId =
         uri.replace(/^fip\//, '');
-
-
     var station =
         self.radioStations.find(function(item) {
-
             return item.id === stationId;
-
         });
-
-
     if (!station) {
-
         self.logger.error(
             '[radio_fip] explodeUri station not found id=' +
             stationId
         );
-
         return libQ.resolve([]);
-
     }
-
-
     self.logger.info(
         '[radio_fip] explodeUri OK station=' +
         station.title
     );
-
-
     return libQ.resolve([{
-
         service: self.serviceName,
-
         type: 'track',
-
         trackType: 'webradio',
-
         radioType: 'FIP',
-
         title: station.title,
-
         name: station.title,
-
         artist: '',
-
         album: '',
-
         uri: station.stream,
-
         stationId: station.id,
-
         stationTitle: station.title,
-
         albumart:
             '/albumart?sourceicon=music_service/radio_fip/images/' +
             self.getStationLogo(station),
-
         duration: 0
-
     }]);
-
 };
 
 ControllerFIP.prototype.clearAddPlayTrack = function(track) {
-
     var self = this;
     var station = self.radioStations.find(function(item) {
         return item.stream === track.uri;
     });
-
-
     self.logger.info(
         '[radio_fip] clearAddPlayTrack station=' +
         JSON.stringify(station)
     );
-
-
     if (!self.mpdPlugin) {
         return libQ.reject('MPD plugin unavailable');
     }
-
-
     self.state = {
         status: 'play',
         service: self.serviceName,
         type: 'webradio',
         trackType: 'webradio',
         radioType: 'FIP',
-
         title: station ?
             station.title :
             'FIP Radio',
-
         name: station ?
             station.title :
             'FIP Radio',
-
         artist: '',
         album: '',
-
         albumart:
             '/albumart?sourceicon=music_service/radio_fip/images/' +
             self.getStationLogo(station),
-
         uri: track.uri,
-
         streaming: true,
         disableUiControls: true,
-
         duration: 0,
         seek: 0
     };
-
-
     self.commandRouter.stateMachine
         .setConsumeUpdateService(
             self.serviceName
         );
-
-
-    /*
-       IMPORTANT :
-       Envoyer l'état AVANT MPD
-       sinon MPD écrase la sélection UI
-    */
-
     self.commandRouter.servicePushState(
         self.state,
         self.serviceName
     );
-
-
     return self.mpdPlugin.sendMpdCommand(
         'stop',
         []
     )
-
     .then(function(){
 
         return self.mpdPlugin.sendMpdCommand(
             'clear',
             []
         );
-
     })
-
     .then(function(){
-
         return self.mpdPlugin.sendMpdCommand(
             'add "' + track.uri + '"',
             []
         );
-
     })
-
     .then(function(){
-
         return self.mpdPlugin.sendMpdCommand(
             'play',
             []
         );
-
     })
-
     .then(function(){
-
-
         self.logger.info(
             '[radio_fip] Playback started station=' +
             (station ? station.title : 'unknown')
         );
-
-
         if (station) {
             self.startMetadataTimer(station);
         }
-
-
         return true;
-
     });
-
 };
 
 ControllerFIP.prototype.addRadioResource = function() {
@@ -530,143 +422,95 @@ ControllerFIP.prototype.pushSongState = function(data, station) {
 };
 
 ControllerFIP.prototype.updateMetadata = function(station) {
-
     var self = this;
-
     Metadata.getMetadata(station.metadataId)
-
     .then(function(data) {
-
         if (!data) {
             return;
         }
-
-
         var current =
             data.artist + '|' +
             data.title + '|' +
             data.album;
-
-
         if (current === self.lastMetadata) {
             return;
         }
-
-
         self.lastMetadata = current;
-
-
         self.logger.info(
             '[radio_fip] ' +
             data.artist +
             ' - ' +
             data.title
         );
-
-
         var state = {
-
             status: 'play',
-
             service: self.serviceName,
-
             type: 'webradio',
-
             trackType: 'webradio',
-
             radioType: 'FIP',
-
-
-            // IMPORTANT :
-            // garder le nom de la station dans l'interface Volumio
-
             title: station.title,
-
             name: station.title,
-
-
-            // Métadonnées du morceau
-
             artist: data.artist,
-
             album: data.album,
-
-
             albumart: data.albumart,
-
-
             uri: station.stream,
-
-
             streaming: true,
-
             disableUiControls: true,
-
             duration: 0,
-
             seek: 0
-
         };
-
-
         self.state = state;
-
-
         try {
-
-
             var vState =
-                self.commandRouter.stateMachine.getState();
-
-
+                self.commandRouter
+                .stateMachine
+                .getState();
             var queueItem =
                 self.commandRouter
                 .stateMachine
                 .playQueue
                 .arrayQueue[vState.position];
-
-
             if (queueItem) {
-
-                queueItem.name = station.title;
-
-                queueItem.title = station.title;
-
-                queueItem.artist = data.artist;
-
-                queueItem.album = data.album;
-
-                queueItem.albumart = data.albumart;
-
-                queueItem.trackType = 'webradio';
-
+                queueItem.name =
+                    station.title;
+                queueItem.title =
+                    station.title;
+                queueItem.artist =
+                    data.artist;
+                queueItem.album =
+                    data.album;
+                queueItem.albumart =
+                    data.albumart;
+                queueItem.uri =
+                    station.stream;
+                queueItem.trackType =
+                    'webradio';
+                queueItem.type =
+                    'webradio';
+                queueItem.duration = 0;
             }
-
-
-            self.commandRouter.stateMachine.currentSeek = 0;
-
-
-            self.commandRouter.stateMachine.playbackStart =
-                Date.now();
-
-
-            self.commandRouter.stateMachine.currentSongDuration =
-                0;
-
-
+            self.commandRouter
+                .stateMachine
+                .currentSeek = 0;
+            self.commandRouter
+                .stateMachine
+                .playbackStart =
+                    Date.now();
+            self.commandRouter
+                .stateMachine
+                .currentSongDuration = 0;
+            self.commandRouter
+                .stateMachine
+                .setConsumeUpdateService(
+                    self.serviceName
+                );
         }
-
         catch(e) {
-
             self.logger.error(
                 '[radio_fip] queue update error ' +
                 e.message
             );
-
         }
-
-
-
         self.logger.info(
             '[radio_fip] METADATA PUSH station=' +
             station.title +
@@ -675,31 +519,20 @@ ControllerFIP.prototype.updateMetadata = function(station) {
             ' title=' +
             data.title
         );
-
-
         self.commandRouter.servicePushState(
-            self.state,
+            state,
             self.serviceName
         );
-
-
         self.logger.info(
             '[radio_fip] Metadata PUSH done'
         );
-
-
     })
-
-
     .catch(function(err) {
-
         self.logger.error(
             '[radio_fip] metadata error ' +
             err.message
         );
-
     });
-
 };
 
 ControllerFIP.prototype.stop = function() {
