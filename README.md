@@ -32,3 +32,4 @@ The plugin provides:
 - FIP Monde
 
 
+<img width="1361" height="900" alt="Image" src="https://github.com/user-attachments/assets/eadfae76-374b-4e83-b8e7-88194353a4ee" />
