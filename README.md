@@ -33,3 +33,6 @@ The plugin provides:
 
 
 <img width="1361" height="900" alt="Image" src="https://github.com/user-attachments/assets/eadfae76-374b-4e83-b8e7-88194353a4ee" />
+
+<img width="1366" height="900" alt="Image" src="https://github.com/user-attachments/assets/3aad3b13-7f38-4d1a-b65f-a8ff165ebcfb" />
+
