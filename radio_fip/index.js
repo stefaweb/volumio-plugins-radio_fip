@@ -429,13 +429,12 @@ ControllerFIP.prototype.updateMetadata = function(station) {
             type: 'webradio',
             trackType: 'webradio',
             radioType: 'FIP',
-            title: station.title,
+            title: data.title,
             name: station.title,
             artist: data.artist,
             album: data.album,
             albumart: data.albumart,
             uri: station.stream,
-            bitrate: self.state.bitrate || '',
             streaming: true,
             disableUiControls: true,
             duration: 0,
@@ -453,16 +452,34 @@ ControllerFIP.prototype.updateMetadata = function(station) {
                 .playQueue
                 .arrayQueue[vState.position];
             if (queueItem) {
-                queueItem.name = station.title;
-                queueItem.title = station.title;
-                queueItem.artist = data.artist;
-                queueItem.album = data.album;
-                queueItem.albumart = data.albumart;
-                queueItem.uri = station.stream;
-                queueItem.trackType = 'webradio';
-                queueItem.type = 'webradio';
+                queueItem.name =
+                    station.title;
+                queueItem.title =
+                    data.title;
+                queueItem.artist =
+                    data.artist;
+                queueItem.album =
+                    data.album;
+                queueItem.albumart =
+                    data.albumart;
+                queueItem.uri =
+                    station.stream;
+                queueItem.trackType =
+                    'webradio';
+                queueItem.type =
+                    'webradio';
                 queueItem.duration = 0;
             }
+            self.commandRouter
+                .stateMachine
+                .currentSeek = 0;
+            self.commandRouter
+                .stateMachine
+                .playbackStart =
+                    Date.now();
+            self.commandRouter
+                .stateMachine
+                .currentSongDuration = 0;
             self.commandRouter
                 .stateMachine
                 .setConsumeUpdateService(
@@ -475,6 +492,14 @@ ControllerFIP.prototype.updateMetadata = function(station) {
                 e.message
             );
         }
+        self.logger.info(
+            '[radio_fip] METADATA PUSH station=' +
+            station.title +
+            ' artist=' +
+            data.artist +
+            ' title=' +
+            data.title
+        );
         self.commandRouter.servicePushState(
             state,
             self.serviceName
