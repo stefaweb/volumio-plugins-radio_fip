@@ -78,7 +78,7 @@
     },
     {
         "id": "world",
-        "title": "FIP World",
+        "title": "FIP Monde",
         "stream": "https://icecast.radiofrance.fr/fipworld-hifi.aac?id=radiofrance",
         "metadataId": 69,
         "logo": "fip-world.png"
