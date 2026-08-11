@@ -81,12 +81,19 @@ ControllerFIP.prototype.addToBrowseSources = function() {
 };
 
 ControllerFIP.prototype.handleBrowseUri = function(curUri) {
+
+    this.logger.info(
+        '[radio_fip] BROWSE CALL uri=' + curUri
+    );
+
     if (!curUri || curUri === 'fip' || curUri === 'fip/') {
         return this.getRootContent();
     }
+
     if (curUri.indexOf('fip/') === 0) {
         return this.getStationContent(curUri);
     }
+
     return libQ.resolve({
         navigation: {
             lists: [{
@@ -98,183 +105,484 @@ ControllerFIP.prototype.handleBrowseUri = function(curUri) {
 };
 
 ControllerFIP.prototype.getRootContent = function() {
+
     var self = this;
     var items = [];
+
     self.radioStations.forEach(function(station) {
+
         items.push({
+
             service: self.serviceName,
-            type: 'folder',
+
+            type: 'mywebradio',
+
             title: station.title,
+
+            artist: '',
+
+            album: '',
+
+            icon: 'fa fa-music',
+
             uri: 'fip/' + station.id,
+
             albumart:
                 '/albumart?sourceicon=music_service/radio_fip/images/' +
                 self.getStationLogo(station)
+
         });
+
     });
+
     return libQ.resolve({
+
         navigation: {
+
             lists: [{
+
                 availableListViews: ['list'],
+
                 items: items
+
             }]
+
         }
+
     });
+
 };
 
 ControllerFIP.prototype.getStationContent = function(uri) {
     var self = this;
-    var stationId = uri.replace('fip/', '');
+
+    var stationId = uri.replace(/^fip\//, '');
+
     var station = self.radioStations.find(function(item) {
         return item.id === stationId;
     });
-    var items = [];
-    if (station) {
-        items.push({
-            service: self.serviceName,
-            type: 'track',
-            station: station,
-            trackType: 'FIP Radio',
-            title: station.title,
-            name: station.title,
-            uri: station.stream,
-            albumart:
-                '/albumart?sourceicon=music_service/radio_fip/images/' +
-                self.getStationLogo(station),
-            duration: 0
+
+    self.logger.info(
+        '[radio_fip] station lookup id=' +
+        stationId +
+        ' result=' +
+        JSON.stringify(station)
+    );
+
+    if (!station) {
+        self.logger.error(
+            '[radio_fip] Station not found: ' + stationId
+        );
+
+        return libQ.resolve({
+            navigation: {
+                lists: [{
+                    availableListViews: ['list'],
+                    items: []
+                }]
+            }
         });
     }
+
+    self.logger.info(
+        '[radio_fip] getStationContent station=' +
+        station.title
+    );
+
     return libQ.resolve({
         navigation: {
             lists: [{
                 availableListViews: ['list'],
-                items: items
+                items: [{
+                    service: self.serviceName,
+                    type: 'mywebradio',
+                    title: station.title,
+                    name: station.title,
+                    artist: '',
+                    album: '',
+                    uri: station.stream,
+                    icon: 'fa fa-music',
+                    albumart:
+                        '/albumart?sourceicon=music_service/radio_fip/images/' +
+                        self.getStationLogo(station)
+                }]
             }]
         }
     });
 };
 
 ControllerFIP.prototype.explodeUri = function(uri) {
+
     var self = this;
-    var result = [];
-    if (!uri) {
-        return libQ.resolve(result);
-    }
-    if (uri.indexOf('fip/') !== 0) {
-        return libQ.resolve(result);
-    }
-    var parts = uri.split('/');
-    if (parts[0] !== 'fip') {
-        return libQ.resolve(result);
-    }
+    var defer = libQ.defer();
+    var response = [];
+
+    self.logger.info(
+        '[radio_fip] explodeUri uri=' + uri
+    );
+
+    var stationId = uri.replace(/^fip\//, '');
+
     var station = self.radioStations.find(function(item) {
-        return item.id === parts[1];
+        return item.id === stationId;
     });
+
     if (!station) {
-        return libQ.resolve(result);
+
+        self.logger.error(
+            '[radio_fip] explodeUri station not found id=' + stationId
+        );
+
+        defer.resolve([]);
+        return defer.promise;
     }
-    result.push({
+
+
+    response.push({
+
         service: self.serviceName,
+
         type: 'track',
-	station: station,
-        trackType: 'FIP Radio',
+
+        trackType: 'webradio',
+
+        radioType: 'FIP',
+
         title: station.title,
+
         name: station.title,
+
+        artist: '',
+
+        album: '',
+
         uri: station.stream,
+
+        stationId: station.id,
+
+        stationTitle: station.title,
+
         albumart:
             '/albumart?sourceicon=music_service/radio_fip/images/' +
             self.getStationLogo(station),
+
         duration: 0
+
     });
-    return libQ.resolve(result);
+
+
+    self.logger.info(
+        '[radio_fip] explodeUri OK station=' +
+        station.title
+    );
+
+
+    defer.resolve(response);
+
+    return defer.promise;
 };
 
 ControllerFIP.prototype.clearAddPlayTrack = function(track) {
+
     var self = this;
-    self.logger.info(
-        '[radio_fip] Playing station=' +
-        JSON.stringify(track.station)
-    );
-    self.logger.info(
-        '[radio_fip] clearAddPlayTrack ' + track.uri
-    );
-    if (!self.mpdPlugin) {
-        return libQ.reject('MPD plugin unavailable');
+
+    var station = null;
+
+
+    /*
+     * 1. Retrouver la station.
+     *
+     * On privilégie stationId ajouté par explodeUri().
+     * Sinon on utilise l'URI du flux.
+     */
+
+    if (track && track.stationId) {
+
+        station = self.radioStations.find(function(item) {
+            return item.id === track.stationId;
+        });
+
     }
+
+
+    if (!station && track && track.uri) {
+
+        station = self.radioStations.find(function(item) {
+            return item.stream === track.uri;
+        });
+
+    }
+
+
+    if (!station) {
+
+        self.logger.error(
+            '[radio_fip] clearAddPlayTrack: station not found'
+        );
+
+        self.logger.error(
+            '[radio_fip] track=' +
+            JSON.stringify(track)
+        );
+
+        return libQ.reject('FIP station not found');
+
+    }
+
+
+    self.logger.info(
+        '[radio_fip] clearAddPlayTrack station=' +
+        JSON.stringify(station)
+    );
+
+
+    /*
+     * 2. Construire l'état initial de la station.
+     */
+
     self.state = {
+
         status: 'play',
+
         service: self.serviceName,
+
         type: 'webradio',
-        trackType: 'FIP Radio',
-        radioType: '',
-        title: track.station ?
-            track.station.title :
-            'FIP Radio',
-        name: track.station ?
-            track.station.title :
-            'FIP Radio',
+
+        trackType: 'webradio',
+
+        radioType: 'FIP',
+
+        title: station.title,
+
+        name: station.title,
+
         artist: '',
+
         album: '',
+
         albumart:
             '/albumart?sourceicon=music_service/radio_fip/images/' +
-            self.getStationLogo(track.station),
-        uri: track.uri,
+            self.getStationLogo(station),
+
+        uri: station.stream,
+
         streaming: true,
+
         disableUiControls: true,
+
         duration: 0,
+
         seek: 0
+
     };
-    self.logger.info(
-        '[radio_fip] Initial state ' +
-        JSON.stringify(self.state)
-    );
+
+
+    /*
+     * 3. Arrêter l'ancien timer de métadonnées.
+     */
+
+    self.stopMetadataTimer();
+
+    self.lastMetadata = '';
+
+
+    /*
+     * 4. Mettre à jour la PlayQueue Volumio.
+     *
+     * C'est important pour l'affichage du morceau courant
+     * en bas de l'écran.
+     */
+
+    try {
+
+        var currentState =
+            self.commandRouter.stateMachine.getState();
+
+        self.logger.info(
+            '[radio_fip] Current state before queue update=' +
+            JSON.stringify(currentState)
+        );
+
+
+        var position =
+            currentState.position;
+
+
+        var queue =
+            self.commandRouter.stateMachine.playQueue;
+
+
+        if (queue &&
+            queue.arrayQueue &&
+            position !== undefined &&
+            queue.arrayQueue[position]) {
+
+            var queueItem =
+                queue.arrayQueue[position];
+
+
+            self.logger.info(
+                '[radio_fip] Updating queue position=' +
+                position
+            );
+
+
+            queueItem.service =
+                self.serviceName;
+
+            queueItem.type =
+                'webradio';
+
+            queueItem.trackType =
+                'webradio';
+
+            queueItem.radioType =
+                'FIP';
+
+            queueItem.title =
+                station.title;
+
+            queueItem.name =
+                station.title;
+
+            queueItem.artist =
+                '';
+
+            queueItem.album =
+                '';
+
+            queueItem.uri =
+                station.stream;
+
+            queueItem.albumart =
+                '/albumart?sourceicon=music_service/radio_fip/images/' +
+                self.getStationLogo(station);
+
+            queueItem.duration =
+                0;
+
+            queueItem.stationId =
+                station.id;
+
+
+            self.logger.info(
+                '[radio_fip] Queue item after update=' +
+                JSON.stringify(queueItem)
+            );
+
+
+            /*
+             * Signaler à Volumio que la queue a changé.
+             */
+
+            if (self.commandRouter.volumioPushQueue) {
+
+                self.commandRouter.volumioPushQueue();
+
+            }
+
+        }
+        else {
+
+            self.logger.info(
+                '[radio_fip] No current queue item found at position=' +
+                position
+            );
+
+        }
+
+    }
+    catch (e) {
+
+        self.logger.error(
+            '[radio_fip] Queue update error ' +
+            e.message
+        );
+
+    }
+
+
+    /*
+     * 5. Piloter MPD.
+     */
+
     return self.mpdPlugin.sendMpdCommand(
         'stop',
         []
     )
-    .then(function(){
+
+    .then(function() {
+
         return self.mpdPlugin.sendMpdCommand(
             'clear',
             []
         );
+
     })
-    .then(function(){
+
+    .then(function() {
+
         return self.mpdPlugin.sendMpdCommand(
-            'add "' + track.uri + '"',
+            'add "' + station.stream + '"',
             []
         );
+
     })
-    .then(function(){
+
+    .then(function() {
+
         return self.mpdPlugin.sendMpdCommand(
             'play',
             []
         );
+
     })
-    .then(function(){
+
+    .then(function() {
+
+
+        /*
+         * 6. Le plugin devient le propriétaire
+         * des mises à jour de lecture.
+         */
+
         self.commandRouter.stateMachine
             .setConsumeUpdateService(
                 self.serviceName
             );
+
+
         self.logger.info(
-            '[radio_fip] PUSH STATE radioType=' +
-            self.state.radioType +
-            ' station=' +
-            (track.station ? track.station.title : 'undefined')
+            '[radio_fip] Pushing initial state station=' +
+            station.title
         );
+
+
         self.commandRouter.servicePushState(
             self.state,
             self.serviceName
         );
-        self.logger.info(
-            '[radio_fip] Playback started'
-        );
-        if(track.station){
 
-            self.startMetadataTimer(
-                track.station
-            );
-        }
+
+        self.logger.info(
+            '[radio_fip] Playback started station=' +
+            station.title
+        );
+
+
+        /*
+         * 7. Démarrer les métadonnées de cette station.
+         */
+
+        self.startMetadataTimer(
+            station
+        );
+
+
         return true;
+
     });
+
 };
 
 ControllerFIP.prototype.addRadioResource = function() {
@@ -351,8 +659,8 @@ ControllerFIP.prototype.pushSongState = function(data, station) {
         status: 'play',
         service: self.serviceName,
         type: 'webradio',
-        trackType: 'FIP Radio',
-        radioType: '',
+        trackType: 'webradio',
+        radioType: 'FIP',
         title: data.title,
         name: data.title,
         artist: data.artist,
@@ -426,8 +734,8 @@ ControllerFIP.prototype.updateMetadata = function(station) {
             status:'play',
             service:self.serviceName,
             type:'webradio',
-            trackType:'FIP Radio',
-            radioType:'',
+            trackType:'webradio',
+            radioType:'FIP',
             title:data.title,
             name:data.title,
             artist:data.artist,
