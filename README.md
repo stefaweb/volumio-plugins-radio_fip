@@ -53,6 +53,8 @@ Please refer to the Volumio Plugin Manager documentation for installation instru
 
 The following example shows how to install, activate, check information and restart the plugin using the **Volumio Plugin Manager**.
 
+Install the plugin:
+
 ```bash
 ./volumio_plugin_manager.py \
   --host http://volumio.local:3000 \
