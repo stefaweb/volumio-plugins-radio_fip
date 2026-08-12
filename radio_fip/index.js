@@ -288,9 +288,17 @@ ControllerFIP.prototype.clearAddPlayTrack = function(track) {
             .setConsumeUpdateService(
                 self.serviceName
             );
+        self.logger.info(
+            '[radio_fip] BEFORE INITIAL PUSH=' +
+            JSON.stringify(self.state)
+        );
         self.commandRouter.servicePushState(
             self.state,
             self.serviceName
+        );
+        self.logger.info(
+            '[radio_fip] AFTER INITIAL PUSH=' +
+            JSON.stringify(self.state)
         );
         if (station) {
             self.startMetadataTimer(
@@ -499,6 +507,10 @@ ControllerFIP.prototype.updateMetadata = function(station) {
             data.artist +
             ' title=' +
             data.title
+        );
+        self.logger.info(
+            '[radio_fip] BEFORE METADATA PUSH=' +
+            JSON.stringify(state)
         );
         self.commandRouter.servicePushState(
             state,
