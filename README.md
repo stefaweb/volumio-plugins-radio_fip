@@ -1,6 +1,6 @@
 # FIP Radio Plugin for Volumio
 
-DEV - DO NOT UPLOAD - CAN KILL YOUR VOLUMIO INSTALL
+> **Development status:** This plugin is currently under active development and is considered beta software. Features may change, and bugs may still be present. Feedback and testing are welcome.
 
 
 ## Description
