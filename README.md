@@ -3,6 +3,8 @@
 ⚠️ **STATUS: BETA VERSION**  
 THIS PLUGIN IS STILL UNDER DEVELOPMENT AND MAY CONTAIN BUGS OR INCOMPLETE FEATURES.
 
+LAST VERSION: 1.0b1 of 12-08-2026
+
 ## Description
 
 `radio_fip` is a Volumio music service plugin providing access to the FIP radio channels from Radio France.
