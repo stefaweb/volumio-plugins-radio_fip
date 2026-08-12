@@ -1,3 +1,26 @@
+/*
+ * Radio FIP Volumio Plugin
+ *
+ * File        : index.js
+ * Version     : 1.0b1
+ * Date        : 12-08-2026
+ * Author      : Stef
+ *
+ * Description :
+ *     Volumio music service plugin for FIP Radio stations.
+ *     Provides access to FIP live streams, station browsing,
+ *     metadata updates and bitrate information.
+ *
+ * Compatibility :
+ *     Volumio 3.x / Volumio 4.x
+ *
+ * License :
+ *     GPL License
+ *
+ * Copyright (C) 2026 Stef
+ *
+ */
+
 'use strict';
 
 var libQ = require('kew');
@@ -6,6 +29,13 @@ var Metadata = require('./metadata');
 
 module.exports = ControllerFIP;
 
+/*
+ * Constructor
+ *
+ * Initializes the FIP radio controller instance.
+ * Stores Volumio services references and initializes
+ * internal state variables.
+ */
 function ControllerFIP(context) {
     var self = this;
     self.context = context;
@@ -19,6 +49,12 @@ function ControllerFIP(context) {
     self.state = {};
 }
 
+/*
+ * Called when Volumio starts.
+ *
+ * Loads the plugin configuration file and prepares
+ * the service environment.
+ */
 ControllerFIP.prototype.onVolumioStart = function() {
     var self = this;
     self.configFile = self.commandRouter.pluginManager.getConfigurationFile(
@@ -29,10 +65,19 @@ ControllerFIP.prototype.onVolumioStart = function() {
     return libQ.resolve();
 };
 
+/*
+ * Returns plugin configuration files.
+ */
 ControllerFIP.prototype.getConfigurationFiles = function() {
     return ['config.json'];
 };
 
+/*
+ * Starts the FIP radio service.
+ *
+ * Loads resources, initializes MPD access,
+ * loads translations and registers the browse source.
+ */
 ControllerFIP.prototype.onStart = function() {
     var self = this;
     self.mpdPlugin = self.commandRouter.pluginManager.getPlugin(
@@ -46,15 +91,29 @@ ControllerFIP.prototype.onStart = function() {
     });
 };
 
+/*
+ * Stops the FIP radio service.
+ *
+ * Stops metadata updates and releases timers.
+ */
 ControllerFIP.prototype.onStop = function() {
     this.stopMetadataTimer();
     return libQ.resolve();
 };
 
+/*
+ * Restarts the FIP radio service.
+ */
 ControllerFIP.prototype.onRestart = function() {
     return libQ.resolve();
 };
 
+/*
+ * Returns the station logo filename.
+ *
+ * Uses a default logo when the requested image
+ * is missing.
+ */
 ControllerFIP.prototype.getStationLogo = function(station) {
     var defaultLogo = 'fip-cover-black.png';
     if (!station || !station.logo) {
@@ -68,6 +127,9 @@ ControllerFIP.prototype.getStationLogo = function(station) {
     return defaultLogo;
 };
 
+/*
+ * Registers FIP Radio as a Volumio browse source.
+ */
 ControllerFIP.prototype.addToBrowseSources = function() {
     this.commandRouter.volumioAddToBrowseSources({
         name: 'FIP Radio',
@@ -80,6 +142,12 @@ ControllerFIP.prototype.addToBrowseSources = function() {
     return libQ.resolve();
 };
 
+/*
+ * Handles browse requests from Volumio UI.
+ *
+ * Routes requests either to the root station list
+ * or to a specific station.
+ */
 ControllerFIP.prototype.handleBrowseUri = function(curUri) {
     this.logger.info(
         '[radio_fip] BROWSE CALL uri=' + curUri
@@ -100,6 +168,11 @@ ControllerFIP.prototype.handleBrowseUri = function(curUri) {
     });
 };
 
+/*
+ * Builds the FIP root navigation content.
+ *
+ * Creates the list of available FIP stations.
+ */
 ControllerFIP.prototype.getRootContent = function() {
     var self = this;
     var items = [];
@@ -127,6 +200,11 @@ ControllerFIP.prototype.getRootContent = function() {
     });
 };
 
+/*
+ * Builds the content for a selected FIP station.
+ *
+ * Returns the playable stream item.
+ */
 ControllerFIP.prototype.getStationContent = function(uri) {
     var self = this;
     var stationId = uri.replace(/^fip\//, '');
@@ -178,6 +256,11 @@ ControllerFIP.prototype.getStationContent = function(uri) {
     });
 };
 
+/*
+ * Converts a FIP station URI into a playable track.
+ *
+ * Used by Volumio playback engine.
+ */
 ControllerFIP.prototype.explodeUri = function(uri) {
     var self = this;
     self.logger.info(
@@ -219,6 +302,12 @@ ControllerFIP.prototype.explodeUri = function(uri) {
     }]);
 };
 
+/*
+ * Starts playback of a FIP radio stream.
+ *
+ * Clears the MPD queue, adds the stream,
+ * starts playback and initializes metadata updates.
+ */
 ControllerFIP.prototype.clearAddPlayTrack = function(track) {
     var self = this;
     var station;
@@ -317,6 +406,10 @@ ControllerFIP.prototype.clearAddPlayTrack = function(track) {
     });
 };
 
+/*
+ * Loads FIP radio station definitions
+ * from radio_stations.json.
+ */
 ControllerFIP.prototype.addRadioResource = function() {
     var self = this;
     try {
@@ -337,6 +430,9 @@ ControllerFIP.prototype.addRadioResource = function() {
     );
 };
 
+/*
+ * Loads internationalization strings.
+ */
 ControllerFIP.prototype.loadRadioI18nStrings = function() {
     try {
         this.i18nStrings = fs.readJsonSync(
@@ -347,10 +443,18 @@ ControllerFIP.prototype.loadRadioI18nStrings = function() {
     }
 };
 
+/*
+ * Returns a translated string.
+ */
 ControllerFIP.prototype.getRadioI18nString = function(key) {
     return this.i18nStrings[key] || key;
 };
 
+/*
+ * Starts periodic metadata updates.
+ *
+ * Queries Radio France metadata every few seconds.
+ */
 ControllerFIP.prototype.startMetadataTimer = function(station) {
     var self = this;
     self.logger.info(
@@ -377,6 +481,9 @@ ControllerFIP.prototype.startMetadataTimer = function(station) {
     self.logger.info('[radio_fip] Metadata timer started');
 };
 
+/*
+ * Stops metadata update timer.
+ */
 ControllerFIP.prototype.stopMetadataTimer = function() {
     if (this.metadataTimer) {
         clearInterval(this.metadataTimer);
@@ -384,6 +491,11 @@ ControllerFIP.prototype.stopMetadataTimer = function() {
     }
 };
 
+/*
+ * Pushes a song state update to Volumio.
+ *
+ * Updates title, artist, album and artwork information.
+ */
 ControllerFIP.prototype.pushSongState = function(data, station) {
     var self = this;
     var state = {
@@ -411,6 +523,11 @@ ControllerFIP.prototype.pushSongState = function(data, station) {
     );
 };
 
+/*
+ * Retrieves and pushes current Radio France metadata.
+ *
+ * Updates Volumio state and playback queue information.
+ */
 ControllerFIP.prototype.updateMetadata = function(station) {
     var self = this;
     Metadata.getMetadata(station.metadataId)
@@ -529,6 +646,9 @@ ControllerFIP.prototype.updateMetadata = function(station) {
     });
 };
 
+/*
+ * Stops FIP playback.
+ */
 ControllerFIP.prototype.stop = function() {
     var self = this;
     self.stopMetadataTimer();
@@ -548,6 +668,12 @@ ControllerFIP.prototype.stop = function() {
     return libQ.resolve();
 };
 
+/*
+ * Retrieves the current MPD stream bitrate.
+ *
+ * Reads MPD status information and updates
+ * the Volumio playback state.
+ */
 ControllerFIP.prototype.updateBitrate = function() {
     var self = this;
     var net = require('net');
@@ -614,6 +740,12 @@ ControllerFIP.prototype.updateBitrate = function() {
         );
     });
 };
+
+/*
+ * Searches FIP content.
+ *
+ * Currently returns an empty result.
+ */
 ControllerFIP.prototype.search = function() {
     return libQ.resolve([]);
 };
