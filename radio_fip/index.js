@@ -238,7 +238,7 @@ ControllerFIP.prototype.clearAddPlayTrack = function(track) {
         status: 'play',
         service: self.serviceName,
         type: 'webradio',
-        trackType: 'FIP Radio',
+        trackType: 'webradio',
         radioType: 'FIP',
         bitrate: '',
         title: station ?
@@ -254,6 +254,7 @@ ControllerFIP.prototype.clearAddPlayTrack = function(track) {
             self.getStationLogo(station),
         uri: track.uri,
         streaming: true,
+        stream: true,
         disableUiControls: true,
         duration: 0,
         seek: 0
@@ -389,7 +390,7 @@ ControllerFIP.prototype.pushSongState = function(data, station) {
         status: 'play',
         service: self.serviceName,
         type: 'webradio',
-        trackType: 'FIP Radio',
+        trackType: 'webradio',
         radioType: 'FIP',
         bitrate: self.state.bitrate || '',
         title: data.title,
@@ -438,7 +439,7 @@ ControllerFIP.prototype.updateMetadata = function(station) {
             trackType: 'webradio',
             radioType: 'FIP',
             title: data.title,
-            name: station.title,
+            name:station.title,
             artist: data.artist,
             album: data.album,
             albumart: data.albumart,
@@ -576,8 +577,15 @@ ControllerFIP.prototype.updateBitrate = function() {
                 '[radio_fip] Bitrate detected ' +
                 bitrate
             );
-            self.state.bitrate =
-                bitrate;
+            self.state.bitrate = bitrate;
+            self.state.stream = true;
+            self.state.streaming = true;
+            self.state.status = 'play';
+            self.commandRouter
+                .stateMachine
+                .setConsumeUpdateService(
+                    self.serviceName
+                );
             self.commandRouter
                 .servicePushState(
                     self.state,
@@ -602,9 +610,7 @@ ControllerFIP.prototype.updateBitrate = function() {
             err.message
         );
     });
-
 };
-
 ControllerFIP.prototype.search = function() {
     return libQ.resolve([]);
 };
