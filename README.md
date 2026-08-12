@@ -1,6 +1,7 @@
 # FIP Radio Plugin for Volumio
 
-**Status:** Beta version. This plugin is still under development and may contain bugs or incomplete features.
+⚠️ **STATUS: BETA VERSION**  
+THIS PLUGIN IS STILL UNDER DEVELOPMENT AND MAY CONTAIN BUGS OR INCOMPLETE FEATURES.
 
 ## Description
 
