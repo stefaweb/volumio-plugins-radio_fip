@@ -33,6 +33,13 @@ The plugin provides:
 - FIP Sacré Français
 - FIP Monde
 
+## Installation
+
+This plugin can be installed using the **Volumio Plugin Manager**:
+
+[https://github.com/stefaweb/volumio-plugin-manager](https://github.com/stefaweb/volumio-plugin-manager)
+
+Please refer to the Volumio Plugin Manager documentation for installation instructions.
 
 <img width="1361" height="900" alt="Image" src="https://github.com/user-attachments/assets/eadfae76-374b-4e83-b8e7-88194353a4ee" />
 
