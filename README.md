@@ -33,6 +33,14 @@ The plugin provides:
 - FIP Sacré Français
 - FIP Monde
 
+<br>
+<img width="2722" height="1800" alt="Image" src="https://github.com/user-attachments/assets/2c10fda1-0ad7-49de-b966-573a7baa0102" />
+<br>
+<br>
+<img width="2732" height="1800" alt="Image" src="https://github.com/user-attachments/assets/41222148-5e9c-42c3-b9c5-0f05070f9969" />
+<br>
+<br>
+
 ## Installation
 
 This plugin can be installed using the **Volumio Plugin Manager**:
@@ -41,11 +49,39 @@ This plugin can be installed using the **Volumio Plugin Manager**:
 
 Please refer to the Volumio Plugin Manager documentation for installation instructions.
 
-<br>
-<img width="2722" height="1800" alt="Image" src="https://github.com/user-attachments/assets/2c10fda1-0ad7-49de-b966-573a7baa0102" />
-<br>
-<br>
-<img width="2732" height="1800" alt="Image" src="https://github.com/user-attachments/assets/41222148-5e9c-42c3-b9c5-0f05070f9969" />
-<br>
-<br>
+## Installation example
+
+The following example shows how to install, activate, check information and restart the plugin using the **Volumio Plugin Manager**.
+
+Install the plugin:
+
+```bash
+./volumio_plugin_manager.py \
+  --host http://volumio.local:3000 \
+  --install-url "https://raw.githubusercontent.com/stefaweb/volumio-plugins-radio_fip/main/radio_fip.zip"
+```
+
+Activate the plugin:
+
+```bash
+./volumio_plugin_manager.py \
+  --host http://volumio.local:3000 \
+  --activate radio_fip
+```
+
+Display plugin information:
+
+```bash
+./volumio_plugin_manager.py \
+  --host http://volumio.local:3000 \
+  --info radio_fip
+```
+
+Restart the plugin:
+
+```bash
+./volumio_plugin_manager.py \
+  --host http://volumio.local:3000 \
+  --restart radio_fip
+```
 
