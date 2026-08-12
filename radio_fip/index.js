@@ -572,7 +572,10 @@ ControllerFIP.prototype.updateBitrate = function() {
         );
         if (match) {
             var bitrate =
-                match[1] + ' kbps';
+                (self.state.name || 'FIP') +
+                ' - ' +
+                match[1] +
+                ' Kbps';
             self.logger.info(
                 '[radio_fip] Bitrate detected ' +
                 bitrate
