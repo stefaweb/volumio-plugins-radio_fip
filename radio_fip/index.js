@@ -2,8 +2,8 @@
  * Radio FIP Volumio Plugin
  *
  * File        : index.js
- * Version     : 1.0b1
- * Date        : 12-08-2026
+ * Version     : 1.0b3
+ * Date        : 13-08-2026
  * Author      : Stef
  *
  * Description :
@@ -326,7 +326,10 @@ ControllerFIP.prototype.clearAddPlayTrack = function(track) {
     self.state = {
         status: 'play',
         service: self.serviceName,
-        type: 'webradio',
+		type: 'track',
+        // To use green circle with duration
+		// trackType: station ? station.title : 'FIP',
+        // To use webradio in circle
         trackType: 'webradio',
         radioType: 'FIP',
         bitrate: '',
@@ -343,18 +346,27 @@ ControllerFIP.prototype.clearAddPlayTrack = function(track) {
             self.getStationLogo(station),
         uri: track.uri,
         streaming: true,
-        stream: true,
+        stream: station ? station.title : 'FIP',
+        // To use green circle with duration
+        // samplerate: '44.1 KHz',
+		// bitdepth: '16 bit',
+		// channels: 2,
+		// To use webradio in circle
+		samplerate: '',
+		bitdepth: '',
+		channels: '',
         disableUiControls: true,
+        // To use green circle with duration
+        // duration: 1,
+        // To use webradio in circle
         duration: 0,
         seek: 0
     };
-
     return self.mpdPlugin.sendMpdCommand(
         'stop',
         []
     )
     .then(function(){
-
         return self.mpdPlugin.sendMpdCommand(
             'clear',
             []
@@ -373,11 +385,12 @@ ControllerFIP.prototype.clearAddPlayTrack = function(track) {
         );
     })
     .then(function(){
-
         self.commandRouter.stateMachine
             .setConsumeUpdateService(
                 self.serviceName
             );
+        self.commandRouter.stateMachine.currentService =
+    		self.serviceName;
         self.logger.info(
             '[radio_fip] BEFORE INITIAL PUSH=' +
             JSON.stringify(self.state)
@@ -501,9 +514,12 @@ ControllerFIP.prototype.pushSongState = function(data, station) {
     var state = {
         status: 'play',
         service: self.serviceName,
-        type: 'webradio',
-        trackType: 'webradio',
+		type: 'track',
+		trackType: 'FIP Radio',
         radioType: 'FIP',
+        samplerate: '44.1 KHz',
+		bitdepth: '16 bit',
+		channels: 2,
         bitrate: self.state.bitrate || '',
         title: data.title,
         name: data.title,
@@ -513,7 +529,7 @@ ControllerFIP.prototype.pushSongState = function(data, station) {
         uri: station.stream,
         streaming: true,
         disableUiControls: true,
-        duration: 0,
+        duration: 1,
         seek: 0
     };
     self.state = state;
@@ -552,8 +568,19 @@ ControllerFIP.prototype.updateMetadata = function(station) {
         var state = Object.assign({}, self.state, {
             status: 'play',
             service: self.serviceName,
-            type: 'webradio',
+			type: 'track',
+            // To use green circle with duration
+			// trackType: station ? station.title : 'FIP',
+            // To use webradio in circle
             trackType: 'webradio',
+            // To use green circle with duration
+			// samplerate: '44.1 KHz',
+			// bitdepth: '16 bit',
+			// channels: 2,
+			// To use webradio in circle
+			samplerate: '',
+			bitdepth: '',
+			channels: '',
             radioType: 'FIP',
             title: data.title,
             name:station.title,
@@ -563,7 +590,10 @@ ControllerFIP.prototype.updateMetadata = function(station) {
             uri: station.stream,
             streaming: true,
             disableUiControls: true,
-            duration: 0,
+	        // To use green circle with duration
+	        // duration: 1,
+	        // To use webradio in circle
+	        duration: 0,
             seek: 0
         });
         self.state = state;
@@ -590,11 +620,18 @@ ControllerFIP.prototype.updateMetadata = function(station) {
                     data.albumart;
                 queueItem.uri =
                     station.stream;
+                // To use green circle with duration
+                // queueItem.trackType =
+                //    'FIP Radio';
+                // To use webradio in circle
                 queueItem.trackType =
-                    'webradio';
+    				'webradio';
                 queueItem.type =
-                    'webradio';
+                    'track';
                 queueItem.duration = 0;
+				queueItem.samplerate = '44.1 KHz';
+				queueItem.bitdepth = '16 bit';
+				queueItem.channels = 2;
             }
             self.commandRouter
                 .stateMachine
@@ -685,7 +722,7 @@ ControllerFIP.prototype.updateBitrate = function() {
         '127.0.0.1',
         function() {
             socket.write(
-                'status\nclose\n'
+                'status\ncurrentsong\nclose\n'
             );
         }
     );
@@ -693,44 +730,73 @@ ControllerFIP.prototype.updateBitrate = function() {
         response += data.toString();
     });
     socket.on('close', function() {
-        var match = response.match(
+        var bitrateMatch = response.match(
             /bitrate:\s*(\d+)/
         );
-        if (match) {
-            var bitrate =
-                (self.state.name || 'FIP') +
-                ' - ' +
-                match[1] +
-                ' Kbps';
-            self.logger.info(
-                '[radio_fip] Bitrate detected ' +
-                bitrate
-            );
-            self.state.bitrate = bitrate;
-            self.state.stream = true;
-            self.state.streaming = true;
-            self.state.status = 'play';
-            self.commandRouter
-                .stateMachine
-                .setConsumeUpdateService(
-                    self.serviceName
-                );
-            self.commandRouter
-                .servicePushState(
-                    self.state,
-                    self.serviceName
-                );
+        if (bitrateMatch) {
+            self.state.bitrate =
+                self.state.name || 'FIP';
         }
-        else {
+        var audioMatch = response.match(
+            /audio:\s*(\d+):(\d+):(\d+)/
+        );
+        if (audioMatch) {
+        	// To use green circle with duration
+            // self.state.samplerate =
+            //     (parseInt(audioMatch[1]) / 1000)
+            //     .toFixed(1) + ' KHz';
+            // self.state.bitdepth =
+            //     audioMatch[2] + ' bit';
+            // self.state.channels =
+            //     parseInt(audioMatch[3]);
+			// To use webradio in circle
+		    self.state.samplerate = '';
+		    self.state.bitdepth = '';
+		    self.state.channels = '';
+
+			var vState =
+			    self.commandRouter.stateMachine.getState();
+			var queueItem =
+			    self.commandRouter.stateMachine.playQueue.arrayQueue[vState.position];
+			if (queueItem) {
+			    queueItem.samplerate = self.state.samplerate;
+			    queueItem.bitdepth = self.state.bitdepth;
+			    queueItem.channels = self.state.channels;
+			}
             self.logger.info(
-                '[radio_fip] Bitrate not found'
+                '[radio_fip] Audio detected ' +
+                self.state.samplerate +
+                ' ' +
+                self.state.bitdepth +
+                ' ' +
+                self.state.channels +
+                'ch'
             );
         }
+        self.state.status = 'play';
+        self.state.service = self.serviceName;
+        self.state.type = 'track';
+        // To use green circle with duration
+		// self.state.trackType = self.state.name || 'FIP';
+        // To use webradio in circle
+        self.state.trackType = 'webradio';
+		self.state.streaming = true;
+		self.state.stream = self.state.name || 'FIP';
+		// To use green circle with duration
+        // self.state.duration = 1;
+        // To use webradio in circle
+        self.state.duration = 0;
+        self.state.seek = 0;
+        self.commandRouter.stateMachine
+            .setConsumeUpdateService(
+                self.serviceName
+            );
+        self.commandRouter.servicePushState(
+            self.state,
+            self.serviceName
+        );
     });
     socket.on('timeout', function() {
-        self.logger.info(
-            '[radio_fip] Bitrate timeout'
-        );
         socket.destroy();
     });
     socket.on('error', function(err) {
