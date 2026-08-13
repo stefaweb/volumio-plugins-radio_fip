@@ -2,7 +2,7 @@
  * Radio FIP Volumio Plugin
  *
  * File        : index.js
- * Version     : 1.0b3
+ * Version     : 1.0
  * Date        : 13-08-2026
  * Author      : Stef
  *
