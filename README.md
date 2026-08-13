@@ -37,7 +37,7 @@ The plugin provides:
 <img width="2732" height="1800" alt="Image" src="https://github.com/user-attachments/assets/41222148-5e9c-42c3-b9c5-0f05070f9969" />
 <br>
 <br>
-<img width="563" height="1218" alt="radio_fip_plugins_sc_3" src="https://github.com/user-attachments/assets/c71c7455-6ec6-44dd-bdaf-ec6339a759e8" />
+<img width="1125" height="2090" alt="radio_fip_plugins_sc_3" src="https://github.com/user-attachments/assets/f1452cd4-93ee-43ab-b821-02212de86e81" />
 <br>
 <br>
 
