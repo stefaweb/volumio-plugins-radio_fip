@@ -51,7 +51,7 @@ Please refer to the Volumio Plugin Manager documentation for installation instru
 
 ## Installation example
 
-The following example shows how to install, activate, check information and restart the plugin using the **Volumio Plugin Manager**.
+The following example shows how to install, activate, check information, restart and remove the plugin using the **Volumio Plugin Manager**.
 
 Install the plugin:
 
