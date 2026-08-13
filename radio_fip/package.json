@@ -9,7 +9,7 @@
 
   "volumio_info": {
     "prettyName": "FIP Radio",
-    "icon": "fa-headphones",
+    "icon": "fa-radio",
     "plugin_type": "music_service",
     "os": [
       "bookworm"
