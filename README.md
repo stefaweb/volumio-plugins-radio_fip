@@ -31,7 +31,7 @@ The plugin provides:
 - FIP Monde
 
 <br>
-<img width="2048" height="1437" alt="radio_fip_plugins_sc_1" src="https://github.com/user-attachments/assets/3291fd29-3991-4947-8e8a-762ae2f204e9" />
+<img width="2940" height="1852" alt="radio_fip_plugins_sc_1" src="https://github.com/user-attachments/assets/aea57d1c-0e45-4a4c-8a9e-5ce5f77be7fd" />
 <br>
 <br>
 <img width="2732" height="1800" alt="Image" src="https://github.com/user-attachments/assets/41222148-5e9c-42c3-b9c5-0f05070f9969" />
