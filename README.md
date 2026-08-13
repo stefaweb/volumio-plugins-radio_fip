@@ -85,3 +85,11 @@ Restart the plugin:
   --restart radio_fip
 ```
 
+Remove the plugin:
+
+```bash
+./volumio_plugin_manager.py \
+  --host http://volumio.local:3000 \
+  --remove radio_fip
+```
+  
