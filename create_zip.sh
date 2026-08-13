@@ -9,8 +9,7 @@ zip -r ../radio_fip.zip . \
 -x "*/.DS_Store" \
 -x "__MACOSX/*" \
 -x "*/._*" \
--x ".git/*"
+-x ".git/*" \
+-x "nodes_modules"
 
 cd ..
-
-unzip -l radio_fip.zip
