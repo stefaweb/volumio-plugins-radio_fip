@@ -10,6 +10,9 @@ zip -r ../radio_fip.zip . \
 -x "__MACOSX/*" \
 -x "*/._*" \
 -x ".git/*" \
--x "nodes_modules"
+-x "nodes_modules" \
+-x ".gitignore" \
+-x "*.zip"
 
 cd ..
+
