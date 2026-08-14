@@ -9,7 +9,7 @@ VERSION: 1.0 of 13-08-2026
 The plugin provides:
 
 - 12 FIP radio stations
-- AAC HiFi streams
+- AAC 192 Kbps HiFi streams
 - Station logos
 - Track metadata (artist, title, album)
 - Album artwork when available
