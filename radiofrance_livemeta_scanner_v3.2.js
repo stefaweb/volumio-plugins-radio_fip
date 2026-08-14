@@ -5,7 +5,7 @@ const fs = require('fs');
 
 const CONFIG = {
     minMetadataId: 1,
-    maxMetadataId: 150,
+    maxMetadataId: 300,
     delayMs: 100,
     minScore: 60,
     timeoutMs: 5000
@@ -111,12 +111,10 @@ function sleep(ms)
 async function fetchJson(url)
 {
     const controller = new AbortController();
-
     const timer = setTimeout(
         () => controller.abort(),
         CONFIG.timeoutMs
     );
-
     try
     {
         const response = await fetch(
@@ -125,14 +123,12 @@ async function fetchJson(url)
                 signal: controller.signal,
                 headers:
                 {
-                    "User-Agent": "RadioFrance-LiveMeta-Scanner-v3.1"
+                    "User-Agent": "RadioFrance-LiveMeta-Scanner-v3.2"
                 }
             }
         );
-
         if (!response.ok)
             return null;
-
         return await response.json();
     }
     catch(error)
@@ -151,35 +147,28 @@ async function getLiveMeta(metadataId)
     {
         if (DEBUG)
             console.log(`[CACHE] metadataId=${metadataId}`);
-
         return METADATA_CACHE.get(metadataId);
     }
-
     const data = await fetchJson(
         `https://api.radiofrance.fr/livemeta/pull/${metadataId}`
     );
-
     METADATA_CACHE.set(
         metadataId,
         data
     );
-
     return data;
 }
 
 function flatten(obj, path = "")
 {
     let result = [];
-
     if (!obj || typeof obj !== "object")
         return result;
-
     for (const key of Object.keys(obj))
     {
         const current = path
             ? `${path}.${key}`
             : key;
-
         if (typeof obj[key] === "object" && obj[key] !== null)
         {
             result.push(
@@ -199,10 +188,8 @@ function flatten(obj, path = "")
             );
         }
     }
-
     return result;
 }
-
 
 function analyseMetadata(data)
 {
@@ -210,23 +197,21 @@ function analyseMetadata(data)
         return null;
 
     return {
+        raw: data,
         text: JSON.stringify(data).toLowerCase(),
         flat: flatten(data)
     };
 }
-
 
 function getStreamKey(stream)
 {
     const match = stream.match(
         /(fip[a-z]+)-/
     );
-
     return match
         ? match[1]
         : null;
 }
-
 
 function scoreStation(station, metadata)
 {
@@ -235,42 +220,51 @@ function scoreStation(station, metadata)
 
     let score = 0;
 
+    const data = metadata.raw;
     const text = metadata.text;
 
-    const streamKey =
-        getStreamKey(
-            station.stream
-        );
+    const keywords = [
+        station.id,
+        station.title.toLowerCase(),
+        station.title
+            .replace(/^FIP\s+/i, '')
+            .toLowerCase()
+    ];
 
-    if (
-        streamKey
-        &&
-        text.includes(streamKey)
-    )
+    for (const keyword of keywords)
     {
-        score += 80;
+        if (keyword && text.includes(keyword))
+        {
+            score += 50;
+        }
     }
 
-    const name =
-        station.id
-            .replace(
-                "sacrefrancais",
-                "sacre francais"
-            )
-            .replace(
-                "nouveautes",
-                "nouveautes"
+    if (data.stationId)
+    {
+        score += 20;
+
+        if (DEBUG)
+        {
+            console.log(
+                `[STATION ID] ${station.title} -> ${data.stationId}`
             );
+        }
+    }
 
-    if (
-        text.includes(name)
-    )
+    if (data.steps)
     {
-        score += 40;
+        const steps = Object.values(data.steps);
+
+        if (steps.length > 0)
+        {
+            score += 10;
+        }
     }
 
     if (
-        text.includes("fip")
+        station.stream.includes('fip')
+        &&
+        text.includes('radiofrance')
     )
     {
         score += 10;
@@ -279,29 +273,24 @@ function scoreStation(station, metadata)
     return score;
 }
 
-
 async function validateMetadata(station)
 {
     const data =
         await getLiveMeta(
             station.metadataId
         );
-
     if (DEBUG)
     {
         console.log(
             `[CHECK] ${station.title} metadataId=${station.metadataId}`
         );
     }
-
     if (!data)
         return false;
-
     return (
         JSON.stringify(data).length > 50
     );
 }
-
 
 async function scanMetadataBatch(ids)
 {
@@ -317,124 +306,93 @@ async function scanMetadataBatch(ids)
     );
 }
 
-
 async function findMissingMetadataId(station)
 {
     let bestCandidate = null;
     let bestScore = 0;
 
     console.log("");
-
-    console.log(
-        `Recherche metadataId : ${station.title}`
-    );
-
+    console.log(`Recherche metadataId : ${station.title}`);
 
     const ids = [];
 
-    for (
-        let id = CONFIG.minMetadataId;
-        id <= CONFIG.maxMetadataId;
-        id++
-    )
+    for (let id = CONFIG.minMetadataId; id <= CONFIG.maxMetadataId; id++)
     {
         ids.push(id);
     }
 
-
-    for (
-        let i = 0;
-        i < ids.length;
-        i += 10
-    )
+    for (let i = 0; i < ids.length; i += 10)
     {
-        const batch =
-            ids.slice(
-                i,
-                i + 10
-            );
-
+        const batch = ids.slice(i, i + 10);
 
         if (DEBUG)
         {
-            console.log(
-                `[BATCH] Scan ${batch[0]}-${batch[batch.length - 1]}`
-            );
+            console.log(`[BATCH] Scan ${batch[0]}-${batch[batch.length - 1]}`);
         }
 
-
-        const results =
-            await scanMetadataBatch(
-                batch
-            );
-
+        const results = await scanMetadataBatch(batch);
 
         for (const item of results)
         {
-            const metadata =
-                analyseMetadata(
-                    item.data
-                );
+            const metadata = analyseMetadata(item.data);
+            const score = scoreStation(station, metadata);
 
-            const score =
-                scoreStation(
-                    station,
-                    metadata
-                );
+            if (station.id === "sacrefrancais" && item.data)
+            {
+                const json = JSON.stringify(item.data).toLowerCase();
 
+                if (
+                    json.includes("sacre francais") ||
+                    json.includes("sacré français") ||
+                    json.includes("sacrefrancais")
+                )
+                {
+                    console.log(`[MATCH TEXTE] Sacré Français trouvé ID=${item.id}`);
 
-            if (
-                score > bestScore
-            )
+                    if (score + 100 > bestScore)
+                    {
+                        bestScore = score + 100;
+
+                        bestCandidate = {
+                            metadataId: item.id,
+                            score: bestScore
+                        };
+                    }
+                }
+            }
+
+            if (score > bestScore)
             {
                 bestScore = score;
 
-                bestCandidate =
-                {
+                bestCandidate = {
                     metadataId: item.id,
                     score: score
                 };
 
-
                 if (DEBUG)
                 {
-                    console.log(
-                        `[CANDIDAT] ${station.title} ID=${item.id} score=${score}`
-                    );
+                    console.log(`[CANDIDAT] ${station.title} ID=${item.id} score=${score}`);
                 }
             }
         }
 
-
         if (!FAST)
         {
-            await sleep(
-                CONFIG.delayMs
-            );
+            await sleep(CONFIG.delayMs);
         }
     }
 
-
-    if (
-        bestCandidate
-        &&
-        bestCandidate.score >= CONFIG.minScore
-    )
+    if (bestCandidate && bestCandidate.score >= CONFIG.minScore)
     {
-        station.metadataId =
-            bestCandidate.metadataId;
+        station.metadataId = bestCandidate.metadataId;
 
-        console.log(
-            `[OK] ${station.title} metadataId=${station.metadataId}`
-        );
+        console.log(`[OK] ${station.title} metadataId=${station.metadataId}`);
 
         return true;
     }
 
-
-    console.log(
-        `[NON TROUVE] ${station.title}`
-    );
+    console.log(`[NON TROUVE] ${station.title}`);
 
     return false;
 }
@@ -448,12 +406,10 @@ async function resolveMissingStations()
             await findMissingMetadataId(
                 station
             );
-
             generateRadioStations();
         }
     }
 }
-
 
 function generateRadioStations()
 {
@@ -468,8 +424,6 @@ function generateRadioStations()
                 logo: station.logo
             })
         );
-
-
     fs.writeFileSync(
         "radio_stations.json",
         JSON.stringify(
@@ -478,11 +432,8 @@ function generateRadioStations()
             4
         )
     );
-
-
     return stations;
 }
-
 
 async function validateKnownStations()
 {
@@ -491,7 +442,6 @@ async function validateKnownStations()
         "Validation des metadataId connus"
     );
     console.log("");
-
     for (const station of STATIONS)
     {
         if (station.metadataId !== null)
@@ -500,13 +450,9 @@ async function validateKnownStations()
                 await validateMetadata(
                     station
                 );
-
-
             console.log(
                 `${valid ? "[OK]" : "[KO]"} ${station.title} metadataId=${station.metadataId}`
             );
-
-
             if (!FAST)
             {
                 await sleep(
@@ -517,43 +463,26 @@ async function validateKnownStations()
     }
 }
 
-
 (async () =>
 {
     console.log(
         "Radio France LiveMeta Scanner v3.1"
     );
-
-
     console.log(
         `Stations définies : ${STATIONS.length}`
     );
-
-
     await validateKnownStations();
-
-
     await resolveMissingStations();
-
-
     const stations =
         generateRadioStations();
-
-
     console.log("");
-
     console.log(
         "Scan terminé"
     );
-
-
     console.log(
         `Stations générées : ${stations.length}`
     );
-
-
     console.log(
         "Fichier créé : radio_stations.json"
     );
-
 })();
