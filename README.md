@@ -17,7 +17,7 @@ The plugin provides:
 
 ## Supported Stations
 
-- FIP
+- FIP National
 - FIP Electro
 - FIP Groove
 - FIP Hip Hop
