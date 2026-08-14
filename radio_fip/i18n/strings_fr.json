@@ -1,6 +1,6 @@
 {
   "PLUGIN_CONFIGURATION": "Configuration de FIP Radio",
-  "NO_CONFIGURATION_AVAILABLE": "Aucune configuration disponible",
+  "NO_CONFIGURATION_AVAILABLE": "Aucune configuration disponible.",
   "PLUGIN_NAME": "FIP Radio",
 
   "WAIT_FOR_RADIO_CHANNEL": "Veuillez patienter pendant le chargement de la station de radio....",
