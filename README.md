@@ -49,6 +49,8 @@ This plugin can be installed using the **Volumio Plugin Manager**:
 
 Please refer to the Volumio Plugin Manager documentation for installation instructions.
 
+The plugin can also be installed manually. Refer to the Volumio documentation for instructions.
+
 ## Installation example
 
 The following example shows how to install, activate, check information, restart and remove the plugin using the **Volumio Plugin Manager**.
