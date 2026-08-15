@@ -1,21 +1,21 @@
 {
   "page": {
-    "label": "FIP Radio Configuration"
+    "label": "TRANSLATE.PLUGIN_CONFIGURATION"
   },
   "sections": [
     {
       "id": "delay",
       "element": "section",
-      "label": "Metadata",
+      "label": "TRANSLATE.API_DELAY",
       "icon": "fa-cogs",
-      "description": "Delay between metadata updates from Radio France, in seconds.",
+      "description": "TRANSLATE.API_DELAY_DESCRIPTION",
       "onSave": {
         "type": "controller",
         "endpoint": "music_service/radio_fip",
         "method": "updateConfig"
       },
       "saveButton": {
-        "label": "Save",
+        "label": "TRANSLATE.SAVE",
         "data": [
           "apiDelay"
         ]
@@ -25,7 +25,7 @@
           "id": "apiDelay",
           "type": "text",
           "element": "input",
-          "label": "Metadata update delay (in seconds)",
+          "label": "TRANSLATE.API_DELAY",
           "value": "5"
         }
       ]
