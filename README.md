@@ -43,7 +43,16 @@ The plugin provides:
 
 ## Installation
 
-This plugin can be installed using the **Volumio Plugin Manager**:
+The **Radio FIP** plugin is now available in beta on the **Volumio Plugin Store**.
+
+To access the beta plugin store in Volumio:
+1. Open the Volumio web interface.
+2. Go to **Plugins**.
+3. Open the **Plugin Store**.
+4. Enable the **Show beta plugins** option in the store settings.
+5. Search for **Radio FIP** and install the plugin.
+
+This plugin can also be installed using the **Volumio Plugin Manager**:
 
 [https://github.com/stefaweb/volumio-plugin-manager](https://github.com/stefaweb/volumio-plugin-manager)
 
