@@ -3,7 +3,7 @@
  *
  * File        : index.js
  * Version     : 1.0.0
- * Date        : 13-08-2026
+ * Date        : 15-08-2026
  * Author      : Stef
  *
  * Description :
@@ -66,9 +66,57 @@ ControllerFIP.prototype.onVolumioStart = function() {
 };
 
 /*
- * Returns plugin configuration files.
+ * Configuration
+ *
+ * Handles the plugin configuration interface and persistence.
+ * Loads the current apiDelay value for display in the Volumio UI
+ * and saves changes made by the user through the configuration page.
  */
-ControllerFIP.prototype.getConfigurationFiles = function() {
+ControllerFIP.prototype.getUIConfig = function () {
+    var defer = libQ.defer();
+    var self = this;
+    self.logger.info('[radio_fip] getUIConfig() CALLED');
+    var lang_code = self.commandRouter.sharedVars.get('language_code');
+    self.getConf(self.configFile);
+    self.commandRouter.i18nJson(
+        __dirname + '/i18n/strings_' + lang_code + '.json',
+        __dirname + '/i18n/strings_en.json',
+        __dirname + '/UIConfig.json'
+    )
+    .then(function (uiconf) {
+        uiconf.sections[0].content[0].value =
+            self.config.get('apiDelay');
+        defer.resolve(uiconf);
+    })
+    .fail(function () {
+        defer.reject(new Error());
+    });
+    return defer.promise;
+};
+
+ControllerFIP.prototype.updateConfig = function (data) {
+    var self = this;
+    self.getConf(self.configFile);
+    if (data && data.apiDelay !== undefined) {
+        self.config.set(
+            'apiDelay',
+            data.apiDelay
+        );
+        self.logger.info(
+            '[radio_fip] apiDelay saved: ' +
+            data.apiDelay
+        );
+    }
+    return libQ.resolve();
+};
+
+ControllerFIP.prototype.getConf = function (configFile) {
+    var self = this;
+    self.config = new (require('v-conf'))();
+    self.config.loadFile(configFile);
+};
+
+ControllerFIP.prototype.getConfigurationFiles = function () {
     return ['config.json'];
 };
 
@@ -476,9 +524,23 @@ ControllerFIP.prototype.startMetadataTimer = function(station) {
     );
     self.stopMetadataTimer();
     if (!station) {
-        self.logger.error('[radio_fip] Cannot start metadata timer without station');
+        self.logger.error(
+            '[radio_fip] Cannot start metadata timer without station'
+        );
         return;
     }
+    var apiDelay = parseInt(
+        self.config.get('apiDelay'),
+        10
+    );
+    if (!apiDelay || apiDelay < 1) {
+        apiDelay = 5;
+    }
+    self.logger.info(
+        '[radio_fip] Metadata interval: ' +
+        apiDelay +
+        ' seconds'
+    );
     self.updateMetadata(station);
     self.metadataTimer = setInterval(function() {
         try {
@@ -490,8 +552,10 @@ ControllerFIP.prototype.startMetadataTimer = function(station) {
                 err.message
             );
         }
-    }, 5000);
-    self.logger.info('[radio_fip] Metadata timer started');
+    }, apiDelay * 1000);
+    self.logger.info(
+        '[radio_fip] Metadata timer started'
+    );
 };
 
 /*
@@ -583,7 +647,7 @@ ControllerFIP.prototype.updateMetadata = function(station) {
 			channels: '',
             radioType: 'FIP',
             title: data.title,
-            name:station.title,
+            name: station.title,
             artist: data.artist,
             album: data.album,
             albumart: data.albumart,

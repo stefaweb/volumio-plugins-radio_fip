@@ -1,34 +1,34 @@
 {
-    "page": {
-      "label": "80s80s Configuration"
-    },
-    "sections": [
-      {
-        "id": "delay",
-        "element": "section",
-        "label": "delay",
-        "icon": "fa-cogs",
-        "description": "The API delay for metadata (artist, title) in seconds.",
-        "onSave": {
-          "type": "controller",
-          "endpoint":"music_service/80s80s",
-          "method":"updateConfig"
-        },
-        "saveButton": {
-          "label": "Save",
-          "data": [
-            "apiDelay"
-          ]
-        },
-        "content": [
-          {
-            "id": "apiDelay",
-            "type":"text",
-            "element": "input",
-            "label": "API Delay (in seconds)",
-            "value": "30"
-          }
+  "page": {
+    "label": "FIP Radio Configuration"
+  },
+  "sections": [
+    {
+      "id": "delay",
+      "element": "section",
+      "label": "Metadata",
+      "icon": "fa-cogs",
+      "description": "Delay between metadata updates from Radio France, in seconds.",
+      "onSave": {
+        "type": "controller",
+        "endpoint": "music_service/radio_fip",
+        "method": "updateConfig"
+      },
+      "saveButton": {
+        "label": "Save",
+        "data": [
+          "apiDelay"
         ]
-      }
-    ]
-  }
+      },
+      "content": [
+        {
+          "id": "apiDelay",
+          "type": "text",
+          "element": "input",
+          "label": "Metadata update delay (in seconds)",
+          "value": "5"
+        }
+      ]
+    }
+  ]
+}
