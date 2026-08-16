@@ -11,8 +11,8 @@ zip -r ../radio_fip.zip . \
 -x "*/._*" \
 -x ".git/*" \
 -x "nodes_modules" \
+-x "package-lock.json" \
 -x ".gitignore" \
 -x "*.zip"
 
 cd ..
-
