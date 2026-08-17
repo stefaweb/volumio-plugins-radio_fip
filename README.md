@@ -87,6 +87,14 @@ Activate the plugin:
   --activate radio_fip
 ```
 
+Desactivate the plugin:
+
+```bash
+./volumio_plugin_manager.py \
+  --host http://volumio.local:3000 \
+  --deactivate radio_fip
+```
+
 Display plugin information:
 
 ```bash
