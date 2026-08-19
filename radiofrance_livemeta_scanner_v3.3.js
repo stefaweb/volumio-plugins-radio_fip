@@ -103,11 +103,13 @@ const STATIONS = [
     }
 ];
 
+// Pauses execution for the specified duration.
 function sleep(ms)
 {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+// Fetches and parses JSON data from a URL with a timeout.
 async function fetchJson(url)
 {
     const controller = new AbortController();
@@ -141,6 +143,7 @@ async function fetchJson(url)
     }
 }
 
+// Retrieves live metadata for a station, using the cache when available.
 async function getLiveMeta(metadataId)
 {
     if (METADATA_CACHE.has(metadataId))
@@ -159,6 +162,7 @@ async function getLiveMeta(metadataId)
     return data;
 }
 
+// Flattens a nested object into path and value entries.
 function flatten(obj, path = "")
 {
     let result = [];
@@ -191,6 +195,7 @@ function flatten(obj, path = "")
     return result;
 }
 
+// Prepares metadata for text searching and scoring.
 function analyseMetadata(data)
 {
     if (!data)
@@ -203,6 +208,7 @@ function analyseMetadata(data)
     };
 }
 
+// Extracts the FIP stream key from a stream URL.
 function getStreamKey(stream)
 {
     const match = stream.match(
@@ -213,6 +219,7 @@ function getStreamKey(stream)
         : null;
 }
 
+// Scores how well metadata matches a station.
 function scoreStation(station, metadata)
 {
     if (!metadata)
@@ -273,6 +280,7 @@ function scoreStation(station, metadata)
     return score;
 }
 
+// Checks whether a station's metadata endpoint returns valid data.
 async function validateMetadata(station)
 {
     const data =
@@ -292,6 +300,7 @@ async function validateMetadata(station)
     );
 }
 
+// Fetches live metadata for a batch of identifiers.
 async function scanMetadataBatch(ids)
 {
     return await Promise.all(
@@ -306,6 +315,7 @@ async function scanMetadataBatch(ids)
     );
 }
 
+// Searches for the most likely metadata identifier for a station.
 async function findMissingMetadataId(station)
 {
     let bestCandidate = null;
@@ -397,6 +407,7 @@ async function findMissingMetadataId(station)
     return false;
 }
 
+// Resolves metadata identifiers for all stations that are missing them.
 async function resolveMissingStations()
 {
     for (const station of STATIONS)
@@ -411,6 +422,7 @@ async function resolveMissingStations()
     }
 }
 
+// Generates and saves the radio station configuration file.
 function generateRadioStations()
 {
     const stations =
@@ -435,6 +447,7 @@ function generateRadioStations()
     return stations;
 }
 
+// Validates metadata identifiers already assigned to stations.
 async function validateKnownStations()
 {
     console.log("");
@@ -463,6 +476,7 @@ async function validateKnownStations()
     }
 }
 
+// Runs the scanner workflow when the script starts.
 (async () =>
 {
     console.log(
