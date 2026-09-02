@@ -4,6 +4,8 @@
 Date: 02-09-2026
 
 - New radio_stations.json
+- Added 'FIP Cultes'
+- Corrected some metadataId
 
 # Changelog for Radio France FIP Open API Scanner
 
