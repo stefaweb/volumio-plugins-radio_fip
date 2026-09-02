@@ -28,7 +28,8 @@ The plugin provides:
 - FIP Reggae
 - FIP Rock
 - FIP Sacré Français
-- FIP Monde
+- FIP World
+- FIP Cultes
 
 <br>
 <img width="2940" height="1852" alt="radio_fip_plugins_sc_1" src="https://github.com/user-attachments/assets/d6864727-5b00-4104-993b-fde385442ed3" />
