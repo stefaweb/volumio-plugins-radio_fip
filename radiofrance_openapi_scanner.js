@@ -5,7 +5,7 @@
  * Radio France FIP Open API Scanner
  *
  * File        : radiofrance_openapi_scanner.js
- * Version     : 1.0.0
+ * Version     : 1.0.1
  * Date        : 02-09-2026
  * Author      : Stef
  *
@@ -16,6 +16,10 @@
  *   Retrieves the current FIP station list, validates the
  *   station-to-metadata ID mapping and generates the
  *   radio_stations.json file used by the Volumio FIP plugin.
+ *
+ *   FIP audio streams are explicitly configured as AAC HIFI
+ *   streams with id=radiofrance and are not taken from the
+ *   Open API liveStream field.
  *
  * Compatibility :
  *
@@ -41,6 +45,22 @@ const CONFIG = {
     outputFile: DEFAULT_OUTPUT,
     delayMs: 100,
     timeoutMs: 5000
+};
+
+const FIP_STREAMS = {
+    FIP: 'https://icecast.radiofrance.fr/fip-hifi.aac?id=radiofrance',
+    FIP_ELECTRO: 'https://icecast.radiofrance.fr/fipelectro-hifi.aac?id=radiofrance',
+    FIP_GROOVE: 'https://icecast.radiofrance.fr/fipgroove-hifi.aac?id=radiofrance',
+    FIP_HIP_HOP: 'https://icecast.radiofrance.fr/fiphiphop-hifi.aac?id=radiofrance',
+    FIP_JAZZ: 'https://icecast.radiofrance.fr/fipjazz-hifi.aac?id=radiofrance',
+    FIP_METAL: 'https://icecast.radiofrance.fr/fipmetal-hifi.aac?id=radiofrance',
+    FIP_NOUVEAUTES: 'https://icecast.radiofrance.fr/fipnouveautes-hifi.aac?id=radiofrance',
+    FIP_POP: 'https://icecast.radiofrance.fr/fippop-hifi.aac?id=radiofrance',
+    FIP_REGGAE: 'https://icecast.radiofrance.fr/fipreggae-hifi.aac?id=radiofrance',
+    FIP_ROCK: 'https://icecast.radiofrance.fr/fiprock-hifi.aac?id=radiofrance',
+    FIP_SACREFRANCAIS: 'https://icecast.radiofrance.fr/fipsacrefrancais-hifi.aac?id=radiofrance',
+    FIP_CULTES: 'https://icecast.radiofrance.fr/fipcultes-hifi.aac?id=radiofrance',
+    FIP_WORLD: 'https://icecast.radiofrance.fr/fipworld-hifi.aac?id=radiofrance'
 };
 
 // Load scanner configuration from the external configuration file.
@@ -182,10 +202,13 @@ async function fetchFipStations() {
         throw new Error('Open API returned no FIP brand');
     const stations = [];
     if (data.brand.liveStream) {
+        const stream = FIP_STREAMS[data.brand.id];
+        if (!stream)
+            throw new Error(`No AAC HIFI stream configured for ${data.brand.id}`);
         stations.push({
             id: data.brand.id,
             title: data.brand.title,
-            stream: data.brand.liveStream,
+            stream,
             playerUrl: data.brand.playerUrl || '',
             openApiStationId: extractPlayerStationId(data.brand.playerUrl)
         });
@@ -193,10 +216,13 @@ async function fetchFipStations() {
     for (const station of data.brand.webRadios || []) {
         if (!station.id || !station.title || !station.liveStream)
             continue;
+        const stream = FIP_STREAMS[station.id];
+        if (!stream)
+            throw new Error(`No AAC HIFI stream configured for ${station.id} (${station.title})`);
         stations.push({
             id: station.id,
             title: station.title,
-            stream: station.liveStream,
+            stream,
             playerUrl: station.playerUrl || '',
             openApiStationId: extractPlayerStationId(station.playerUrl)
         });
@@ -236,7 +262,7 @@ async function fetchLiveStations(stations) {
     const results = [];
     console.log('\nRetrieving current GraphQL live metadata...\n');
     for (const station of stations) {
-        process.stdout.write(`  ${station.title.padEnd(25)} `);
+        process.stdout.write(` ${station.title.padEnd(25)}`);
         try {
             const live = await queryLiveStation(station.id);
             if (!live)
@@ -451,7 +477,7 @@ async function main() {
         throw new Error('No FIP station returned by Open API');
     console.log(`Found ${stations.length} FIP station(s):`);
     for (const station of stations)
-        console.log(`  - ${station.title} [${station.id}]${station.openApiStationId !== null ? ` -> id_station=${station.openApiStationId}` : ''}`);
+        console.log(` - ${station.title} [${station.id}]${station.openApiStationId !== null ? ` -> id_station=${station.openApiStationId}` : ''}`);
     if (args.includes('--test-live')) {
         await testLiveStations(stations);
         return;

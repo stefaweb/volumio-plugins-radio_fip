@@ -1,5 +1,11 @@
 # Changelog for FIP Radio Plugin for Volumio
 
+## Version 1.0.5
+Date: 02-09-2026
+
+- New radio_stations.json
+- Fixed the stream that was pointing to .mp3 instead of .aac.
+
 ## Version 1.0.4
 Date: 02-09-2026
 

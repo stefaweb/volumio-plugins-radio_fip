@@ -1,6 +1,6 @@
 # FIP Radio Plugin for Volumio
 
-VERSION: 1.0.4 of 02-09-2026
+VERSION: 1.0.5 of 02-09-2026
 
 ## Description
 
