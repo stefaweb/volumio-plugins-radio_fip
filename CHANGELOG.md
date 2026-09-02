@@ -32,6 +32,8 @@ Date: 02-09-2026
 - Added configurable request delay and HTTP timeout.
 - Added error handling for API, GraphQL and validation failures.
 
+# Changelog for FIP Radio Plugin for Volumio
+
 ## Version 1.0.3
 Date: 16-08-2026
 
