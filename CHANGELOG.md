@@ -1,5 +1,29 @@
 # Changelog for FIP Radio Plugin for Volumio
 
+## Version 1.0.4
+Date: 02-09-2026
+
+- New radio_stations.json
+
+# Changelog for Radio France FIP Open API Scanner
+
+## Version 1.0.0
+Date: 02-09-2026
+
+- Initial release.
+- Added Radio France Open API GraphQL station discovery.
+- Added FIP station and webradio detection.
+- Added live metadata retrieval and station ID validation.
+- Added metadata ID uniqueness validation.
+- Added preservation of existing station IDs and logo filenames.
+- Added generation and validation of radio_stations.json.
+- Added atomic output file writing.
+- Added external configuration file support.
+- Added --output command-line option.
+- Added --test-live command-line option.
+- Added configurable request delay and HTTP timeout.
+- Added error handling for API, GraphQL and validation failures.
+
 ## Version 1.0.3
 Date: 16-08-2026
 
