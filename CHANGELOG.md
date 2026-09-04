@@ -1,5 +1,13 @@
 # Changelog for FIP Radio Plugin for Volumio
 
+## Changelog 1.0.6
+Date: 04-09-2026
+
+- Improved metadata retrieval for all FIP stations.
+- Added fallback to station logos when artwork is unavailable.
+- Improved compatibility with FIP stations using different LiveMeta endpoints.
+- FIP Cultes metadata is now correctly handled even though its /livemeta/pull/709 endpoint is unavailable.
+
 ## Version 1.0.5
 Date: 02-09-2026
 
